@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Icon
@@ -53,7 +55,8 @@ fun WorkoutScreen(
     viewModel: WorkoutViewModel,
     onOpenSession: (Long) -> Unit,
     onOpenRoutine: (Long) -> Unit,
-    onOpenExercise: (Long) -> Unit
+    onOpenExercise: (Long) -> Unit,
+    onOpenBodyweight: () -> Unit
 ) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val activeSession by viewModel.activeSession.collectAsStateWithLifecycle()
@@ -87,6 +90,36 @@ fun WorkoutScreen(
                 }
                 Spacer(Modifier.height(10.dp))
             }
+
+            SystemPanel(
+                accent = SparkColors.Violet,
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenBodyweight),
+                contentPadding = PaddingValues(14.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.SelfImprovement,
+                        contentDescription = null,
+                        tint = SparkColors.Violet,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("BODYWEIGHT", style = SystemLabel.copy(color = SparkColors.Violet))
+                        Text(
+                            "No equipment, no gym — circuits for a small room",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SparkColors.TextMuted
+                        )
+                    }
+                    Icon(
+                        Icons.Filled.ChevronRight,
+                        contentDescription = null,
+                        tint = SparkColors.Violet
+                    )
+                }
+            }
+            Spacer(Modifier.height(10.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("Routines", "Library", "History").forEachIndexed { index, label ->

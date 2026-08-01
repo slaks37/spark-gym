@@ -32,6 +32,8 @@ import androidx.navigation.navArgument
 import com.sparkgym.core.design.SparkColors
 import com.sparkgym.di.AppContainer
 import com.sparkgym.ui.common.sparkViewModelFactory
+import com.sparkgym.ui.bodyweight.BodyweightScreen
+import com.sparkgym.ui.bodyweight.BodyweightViewModel
 import com.sparkgym.ui.coach.CoachScreen
 import com.sparkgym.ui.coach.CoachViewModel
 import com.sparkgym.ui.connect.ConnectScreen
@@ -144,7 +146,17 @@ fun SparkNavHost(
                         viewModel = vm,
                         onOpenSession = { id -> navController.navigate(Destination.Session.of(id)) },
                         onOpenRoutine = { id -> navController.navigate(Destination.RoutineDetail.of(id)) },
-                        onOpenExercise = { id -> navController.navigate(Destination.ExerciseDetail.of(id)) }
+                        onOpenExercise = { id -> navController.navigate(Destination.ExerciseDetail.of(id)) },
+                        onOpenBodyweight = { navController.navigate(Destination.Bodyweight.route) }
+                    )
+                }
+
+                composable(Destination.Bodyweight.route) {
+                    val vm: BodyweightViewModel = viewModel(factory = factory)
+                    BodyweightScreen(
+                        viewModel = vm,
+                        onBack = { navController.popBackStack() },
+                        onOpenSession = { id -> navController.navigate(Destination.Session.of(id)) }
                     )
                 }
 

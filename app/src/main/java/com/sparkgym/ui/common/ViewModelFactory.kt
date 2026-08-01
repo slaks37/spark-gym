@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.sparkgym.di.AppContainer
+import com.sparkgym.ui.bodyweight.BodyweightViewModel
 import com.sparkgym.ui.coach.CoachViewModel
 import com.sparkgym.ui.connect.ConnectViewModel
 import com.sparkgym.ui.heatmap.HeatmapViewModel
@@ -20,6 +21,7 @@ import com.sparkgym.ui.workout.WorkoutViewModel
 fun sparkViewModelFactory(container: AppContainer): ViewModelProvider.Factory = viewModelFactory {
     initializer { HunterViewModel(container) }
     initializer { WorkoutViewModel(container) }
+    initializer { BodyweightViewModel(container) }
     initializer { SessionViewModel(container) }
     initializer { HeatmapViewModel(container) }
     initializer { NutritionViewModel(container) }

@@ -72,6 +72,26 @@ interface RoutineDao {
     @Query("SELECT * FROM routines ORDER BY isCustom DESC, name")
     fun observeRoutines(): Flow<List<RoutineEntity>>
 
+    /** The gym tab: everything except the bodyweight circuits, which have their own screen. */
+    @Query("SELECT * FROM routines WHERE goal != :goal ORDER BY isCustom DESC, name")
+    fun observeRoutinesExcludingGoal(goal: String): Flow<List<RoutineEntity>>
+
+    @Query("SELECT * FROM routines WHERE goal = :goal ORDER BY name")
+    fun observeRoutinesByGoal(goal: String): Flow<List<RoutineEntity>>
+
+    @Query("SELECT * FROM routines WHERE goal = :goal")
+    suspend fun routinesByGoal(goal: String): List<RoutineEntity>
+
+    @Query("SELECT * FROM routines WHERE slug = :slug LIMIT 1")
+    suspend fun routineBySlug(slug: String): RoutineEntity?
+
+    @Query("SELECT * FROM routine_days WHERE routineId = :routineId ORDER BY dayIndex")
+    suspend fun daysFor(routineId: Long): List<RoutineDayEntity>
+
+    /** Circuits are re-prescribed whenever the level changes, so the old rows go first. */
+    @Query("DELETE FROM routine_exercises WHERE dayId = :dayId")
+    suspend fun deletePrescriptions(dayId: Long)
+
     @Transaction
     @Query("SELECT * FROM routines WHERE id = :id")
     fun observeRoutine(id: Long): Flow<RoutineWithDays?>

@@ -7,6 +7,7 @@ import com.sparkgym.data.local.PersonalRecordEntity
 import com.sparkgym.data.local.SetLogEntity
 import com.sparkgym.data.local.SparkGymDatabase
 import com.sparkgym.data.local.WorkoutSessionEntity
+import com.sparkgym.data.seed.BodyweightWorkouts
 import com.sparkgym.domain.engine.HeatmapEngine
 import com.sparkgym.domain.engine.ProgressionEngine
 import com.sparkgym.domain.engine.StrengthMath
@@ -67,6 +68,10 @@ class WorkoutRepository(private val db: SparkGymDatabase) {
     // -------------------------------------------------------------- routines
 
     fun observeRoutines() = routineDao.observeRoutines()
+
+    /** Everything except the bodyweight circuits, which get their own screen. */
+    fun observeGymRoutines() =
+        routineDao.observeRoutinesExcludingGoal(BodyweightWorkouts.ROUTINE_GOAL)
     fun observeRoutine(id: Long) = routineDao.observeRoutine(id)
     fun observeRoutineDays(routineId: Long) = routineDao.observeDays(routineId)
     fun observePrescribed(dayId: Long) = routineDao.observePrescribed(dayId)

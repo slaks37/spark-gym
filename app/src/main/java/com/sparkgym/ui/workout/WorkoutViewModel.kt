@@ -67,8 +67,9 @@ class WorkoutViewModel(private val container: AppContainer) : ViewModel() {
 
     // ------------------------------------------------------------ routines
 
+    /** Gym programmes only — bodyweight circuits have their own screen. */
     val routines: StateFlow<List<RoutineEntity>> =
-        container.workoutRepository.observeRoutines()
+        container.workoutRepository.observeGymRoutines()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _selectedRoutineId = MutableStateFlow<Long?>(null)

@@ -8,6 +8,7 @@ import com.sparkgym.data.remote.FitbitApi
 import com.sparkgym.data.remote.FitbitAuth
 import com.sparkgym.data.remote.HealthConnectSource
 import com.sparkgym.data.remote.OpenFoodFactsApi
+import com.sparkgym.data.repository.BodyweightRepository
 import com.sparkgym.data.repository.GameRepository
 import com.sparkgym.data.repository.NutritionRepository
 import com.sparkgym.data.repository.SeedRepository
@@ -47,6 +48,10 @@ class AppContainer(private val context: Context) {
     val seedRepository: SeedRepository by lazy { SeedRepository(database) }
 
     val workoutRepository: WorkoutRepository by lazy { WorkoutRepository(database) }
+
+    val bodyweightRepository: BodyweightRepository by lazy {
+        BodyweightRepository(database, workoutRepository)
+    }
 
     val nutritionRepository: NutritionRepository by lazy {
         NutritionRepository(database, openFoodFacts)
