@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <include domain="database" path="spark_gym.db" />
+    <include domain="sharedpref" path="." />
+    <!-- OAuth tokens stay on the device. -->
+    <exclude domain="sharedpref" path="sparkgym_secure_tokens.xml" />
+</full-backup-content>

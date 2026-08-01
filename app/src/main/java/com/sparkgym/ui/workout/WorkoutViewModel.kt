@@ -1,0 +1,149 @@
+package com.sparkgym.ui.workout
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.sparkgym.data.local.ExerciseWithMuscles
+import com.sparkgym.data.local.PersonalRecordEntity
+import com.sparkgym.data.local.PrescribedExercise
+import com.sparkgym.data.local.RoutineDayEntity
+import com.sparkgym.data.local.RoutineEntity
+import com.sparkgym.data.local.WorkoutSessionEntity
+import com.sparkgym.di.AppContainer
+import com.sparkgym.domain.model.Equipment
+import com.sparkgym.domain.model.Muscle
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+/** Library browsing, routine browsing and history. The session itself lives in [SessionViewModel]. */
+@OptIn(ExperimentalCoroutinesApi::class)
+class WorkoutViewModel(private val container: AppContainer) : ViewModel() {
+
+    // ------------------------------------------------------------- library
+
+    data class LibraryFilters(
+        val query: String = "",
+        val muscle: Muscle? = null,
+        val equipment: Equipment? = null,
+        val favoritesOnly: Boolean = false,
+        val homeOnly: Boolean = false
+    )
+
+    private val _filters = MutableStateFlow(LibraryFilters())
+    val filters: StateFlow<LibraryFilters> = _filters.asStateFlow()
+
+    val library: StateFlow<List<ExerciseWithMuscles>> =
+        combine(container.workoutRepository.observeExercises(), _filters) { all, f ->
+            all.filter { item ->
+                val e = item.exercise
+                val matchesQuery = f.query.isBlank() || e.name.contains(f.query, ignoreCase = true)
+                val matchesMuscle = f.muscle == null || item.muscles.any { it.muscle == f.muscle.name }
+                val matchesEquipment = f.equipment == null || e.equipment == f.equipment
+                val matchesFavorite = !f.favoritesOnly || e.isFavorite
+                val matchesHome = !f.homeOnly || e.equipment.isHomeFriendly
+                matchesQuery && matchesMuscle && matchesEquipment && matchesFavorite && matchesHome
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun setQuery(query: String) = _filters.update { it.copy(query = query) }
+    fun setMuscle(muscle: Muscle?) = _filters.update { it.copy(muscle = muscle) }
+    fun setEquipment(equipment: Equipment?) = _filters.update { it.copy(equipment = equipment) }
+    fun toggleFavoritesOnly() = _filters.update { it.copy(favoritesOnly = !it.favoritesOnly) }
+    fun toggleHomeOnly() = _filters.update { it.copy(homeOnly = !it.homeOnly) }
+
+    fun toggleFavorite(exerciseId: Long, favorite: Boolean) {
+        viewModelScope.launch { container.workoutRepository.toggleFavorite(exerciseId, favorite) }
+    }
+
+    // ------------------------------------------------------------ routines
+
+    val routines: StateFlow<List<RoutineEntity>> =
+        container.workoutRepository.observeRoutines()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    private val _selectedRoutineId = MutableStateFlow<Long?>(null)
+    val selectedRoutineId: StateFlow<Long?> = _selectedRoutineId.asStateFlow()
+
+    val routineDays: StateFlow<List<RoutineDayEntity>> = _selectedRoutineId
+        .flatMapLatest { id ->
+            if (id == null) flowOf(emptyList())
+            else container.workoutRepository.observeRoutineDays(id)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    private val _selectedDayId = MutableStateFlow<Long?>(null)
+    val selectedDayId: StateFlow<Long?> = _selectedDayId.asStateFlow()
+
+    val dayExercises: StateFlow<List<PrescribedExercise>> = _selectedDayId
+        .flatMapLatest { id ->
+            if (id == null) flowOf(emptyList())
+            else container.workoutRepository.observePrescribed(id)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun selectRoutine(id: Long?) {
+        _selectedRoutineId.value = id
+        _selectedDayId.value = null
+    }
+
+    fun selectDay(id: Long?) {
+        _selectedDayId.value = id
+    }
+
+    fun setActiveRoutine(id: Long) {
+        viewModelScope.launch { container.prefs.update { it.copy(activeRoutineId = id) } }
+    }
+
+    // ------------------------------------------------------------- history
+
+    val history: StateFlow<List<WorkoutSessionEntity>> =
+        container.workoutRepository.observeHistory()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val personalRecords: StateFlow<List<PersonalRecordEntity>> =
+        container.workoutRepository.observePersonalRecords()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val volumeTrend = container.workoutRepository.observeVolumeTrend(30)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val activeSession: StateFlow<WorkoutSessionEntity?> =
+        container.workoutRepository.observeActiveSession()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** Exercise name lookup for history rows, so the UI never queries the DB itself. */
+    val exerciseNames: StateFlow<Map<Long, String>> =
+        container.workoutRepository.observeExercises()
+            .map { list -> list.associate { it.exercise.id to it.exercise.name } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    // -------------------------------------------------------------- start
+
+    private val _startedSessionId = MutableStateFlow<Long?>(null)
+    val startedSessionId: StateFlow<Long?> = _startedSessionId.asStateFlow()
+
+    fun startEmptySession() = startSession("Free session", null)
+
+    fun startFromDay(day: RoutineDayEntity) = startSession(day.name, day.id)
+
+    private fun startSession(name: String, dayId: Long?) {
+        viewModelScope.launch {
+            val weight = container.prefs.profile.first().weightKg
+            _startedSessionId.value = container.workoutRepository.startSession(name, dayId, weight)
+        }
+    }
+
+    fun consumeStartedSession() {
+        _startedSessionId.value = null
+    }
+}

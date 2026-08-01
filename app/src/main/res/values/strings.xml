@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Spark Gym</string>
+    <string name="health_permissions_rationale">Spark Gym reads steps, heart rate, sleep and calories from Health Connect so your Fitbit activity counts toward your daily quests and calorie budget. It writes finished workouts back so other apps stay in sync. Your health data never leaves the device except to Fitbit, and only if you link your account.</string>
+</resources>

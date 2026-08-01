@@ -1,0 +1,11 @@
+# Copy to local.properties and fill in. Never commit local.properties.
+#
+# Android Studio writes sdk.dir for you; set it by hand for command-line builds.
+sdk.dir=/path/to/Android/sdk
+
+# Optional — only needed for the direct Fitbit account link.
+# Register at https://dev.fitbit.com/apps/new with:
+#   OAuth 2.0 Application Type: Client
+#   Redirect URL:               sparkgym://fitbit-callback
+fitbit.clientId=
+fitbit.redirectScheme=sparkgym

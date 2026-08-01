@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.SparkGym" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@color/system_void</item>
+        <item name="android:navigationBarColor">@color/system_void</item>
+        <item name="android:windowBackground">@color/system_void</item>
+    </style>
+
+    <style name="Theme.SparkGym.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/system_void</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_system_mark</item>
+        <item name="postSplashScreenTheme">@style/Theme.SparkGym</item>
+    </style>
+
+</resources>
