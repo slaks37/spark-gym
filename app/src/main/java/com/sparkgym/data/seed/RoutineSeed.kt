@@ -31,7 +31,10 @@ data class SeedRoutine(
  */
 object RoutineSeed {
 
-    val routines: List<SeedRoutine> = listOf(
+    /** Starter plans plus the competitive shelf in RoutineSeedPro. */
+    val routines: List<SeedRoutine> get() = starter + RoutineSeedPro.routines
+
+    private val starter: List<SeedRoutine> = listOf(
 
         SeedRoutine(
             slug = "push-pull-legs",

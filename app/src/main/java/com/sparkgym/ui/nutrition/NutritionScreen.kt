@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocalDrink
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +46,8 @@ import kotlin.math.roundToInt
 @Composable
 fun NutritionScreen(
     viewModel: NutritionViewModel,
-    onAddFood: (Meal) -> Unit
+    onAddFood: (Meal) -> Unit,
+    onOpenMealPlans: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val target = state.target
@@ -130,6 +132,16 @@ fun NutritionScreen(
                     )
                 }
             }
+        }
+
+        item {
+            SystemButton(
+                "Meal plans",
+                onOpenMealPlans,
+                icon = Icons.Filled.MenuBook,
+                accent = SparkColors.Amber,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
         item {

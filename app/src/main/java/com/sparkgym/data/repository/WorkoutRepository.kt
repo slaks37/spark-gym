@@ -8,10 +8,12 @@ import com.sparkgym.data.local.SetLogEntity
 import com.sparkgym.data.local.SparkGymDatabase
 import com.sparkgym.data.local.WorkoutSessionEntity
 import com.sparkgym.domain.engine.HeatmapEngine
+import com.sparkgym.domain.engine.ProgressionEngine
 import com.sparkgym.domain.engine.StrengthMath
 import com.sparkgym.domain.model.Muscle
 import com.sparkgym.domain.model.TrackingType
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /**
@@ -286,6 +288,68 @@ class WorkoutRepository(private val db: SparkGymDatabase) {
     fun observePersonalRecords() = workoutDao.observePrs()
 
     suspend fun trainingDays(): List<Long> = workoutDao.recentTrainingDays()
+
+    /** Sessions logged in the current rolling week. */
+    suspend fun sessionsThisWeek(): Int =
+        workoutDao.recentTrainingDays().count { it >= Dates.today() - 6 }
+
+    suspend fun daysSinceLastSession(): Int {
+        val last = workoutDao.recentTrainingDays().maxOrNull() ?: return Int.MAX_VALUE
+        return (Dates.today() - last).toInt()
+    }
+
+    /**
+     * How many consecutive calendar weeks contain at least one session, counting
+     * back from this one. Feeds the deload check.
+     */
+    suspend fun consecutiveTrainingWeeks(): Int {
+        val days = workoutDao.recentTrainingDays().toSet()
+        if (days.isEmpty()) return 0
+        var weeks = 0
+        var weekStart = Dates.today() - 6
+        while (weeks < 52) {
+            val hasSession = (weekStart..(weekStart + 6)).any { it in days }
+            if (!hasSession) break
+            weeks++
+            weekStart -= 7
+        }
+        return weeks
+    }
+
+    /**
+     * The main lifts whose estimated 1RM has flatlined. Only exercises with a
+     * real history are considered — three sessions is not enough to call a stall.
+     */
+    suspend fun stalledLifts(): List<String> {
+        val ids = workoutDao.mostTrainedExerciseIds()
+        return ids.mapNotNull { id ->
+            val history = workoutDao.estimatedMaxHistory(id).map { it.volumeKg }
+            if (ProgressionEngine.hasStalled(history)) exerciseDao.byId(id)?.name else null
+        }
+    }
+
+    /** Personal records set inside the given window. */
+    suspend fun recentPrCount(withinDays: Int = 21): Int {
+        val cutoff = System.currentTimeMillis() - withinDays * 86_400_000L
+        return workoutDao.observePrs().first().count { it.achievedAt >= cutoff }
+    }
+
+    /** Today's suggested load for an exercise, from double progression. */
+    suspend fun progressionFor(
+        exerciseId: Long,
+        repsMin: Int,
+        repsMax: Int
+    ): ProgressionEngine.Suggestion? {
+        val exercise = exerciseDao.byId(exerciseId) ?: return null
+        val recent = workoutDao.recentSetsFor(exerciseId, limit = 6)
+            .filter { it.reps > 0 }
+            .map { it.weightKg to it.reps }
+        val muscles = exerciseDao.musclesFor(exerciseId)
+        val isLowerBody = muscles.any {
+            it in setOf("QUADS", "HAMSTRINGS", "GLUTES", "CALVES", "ADDUCTORS", "ABDUCTORS")
+        }
+        return ProgressionEngine.suggest(recent, repsMin, repsMax, exercise.tracking, isLowerBody)
+    }
 
     /** Consecutive days ending today (or yesterday) with a finished session. */
     suspend fun trainingStreak(): Int {

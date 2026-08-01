@@ -26,7 +26,10 @@ object FoodSeed {
         fiber: Double = 0.0, serving: String = "100 g", grams: Double = 100.0, brand: String = ""
     ) = SeedFood(slug, name, brand, kcal, p, c, fat, fiber, serving, grams)
 
-    val foods: List<SeedFood> = listOf(
+    /** Staples plus the warung / restaurant / supplement shelf. */
+    val foods: List<SeedFood> get() = staples + FoodSeedExtended.foods
+
+    private val staples: List<SeedFood> = listOf(
 
         // ---- Indonesian staples ----
         f("nasi-putih", "Nasi Putih (steamed white rice)", 130.0, 2.7, 28.2, 0.3, 0.4, "1 centong (150 g)", 150.0),

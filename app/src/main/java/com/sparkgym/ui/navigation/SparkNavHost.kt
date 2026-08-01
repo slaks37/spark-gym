@@ -32,6 +32,8 @@ import androidx.navigation.navArgument
 import com.sparkgym.core.design.SparkColors
 import com.sparkgym.di.AppContainer
 import com.sparkgym.ui.common.sparkViewModelFactory
+import com.sparkgym.ui.coach.CoachScreen
+import com.sparkgym.ui.coach.CoachViewModel
 import com.sparkgym.ui.connect.ConnectScreen
 import com.sparkgym.ui.connect.ConnectViewModel
 import com.sparkgym.ui.heatmap.HeatmapScreen
@@ -40,6 +42,7 @@ import com.sparkgym.ui.hunter.AchievementsScreen
 import com.sparkgym.ui.hunter.HunterViewModel
 import com.sparkgym.ui.hunter.StatusScreen
 import com.sparkgym.ui.nutrition.FoodSearchScreen
+import com.sparkgym.ui.nutrition.MealPlanScreen
 import com.sparkgym.ui.nutrition.NutritionScreen
 import com.sparkgym.ui.nutrition.NutritionViewModel
 import com.sparkgym.ui.profile.OnboardingScreen
@@ -115,6 +118,16 @@ fun SparkNavHost(
                     )
                 }
 
+                composable(Destination.Coach.route) {
+                    val vm: CoachViewModel = viewModel(factory = factory)
+                    CoachScreen(vm)
+                }
+
+                composable(Destination.MealPlans.route) {
+                    val vm: NutritionViewModel = viewModel(factory = factory)
+                    MealPlanScreen(vm) { navController.popBackStack() }
+                }
+
                 composable(Destination.Quests.route) {
                     val vm: HunterViewModel = viewModel(factory = factory)
                     QuestScreen(vm)
@@ -186,7 +199,8 @@ fun SparkNavHost(
                     val vm: NutritionViewModel = viewModel(factory = factory)
                     NutritionScreen(
                         viewModel = vm,
-                        onAddFood = { meal -> navController.navigate(Destination.FoodSearch.of(meal.name)) }
+                        onAddFood = { meal -> navController.navigate(Destination.FoodSearch.of(meal.name)) },
+                        onOpenMealPlans = { navController.navigate(Destination.MealPlans.route) }
                     )
                 }
 

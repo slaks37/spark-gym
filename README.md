@@ -4,12 +4,13 @@ An Android training app that puts four things most people juggle across four app
 
 | Inspiration | What it contributes here |
 |---|---|
-| Muscle Monster / home-gym planners | Bundled programmes, a 100+ exercise library, home-friendly filters |
+| Muscle Monster / home-gym planners | 14 bundled programmes, a 171-exercise library, home-friendly filters |
 | Arise (Solo Leveling) | Levels, ranks, six attributes, daily quests, penalties, achievements |
 | Gym Log / Gym Trainer | The set-by-set logger, rest timer, personal records, volume history |
 | — | **Muscle heat map** — a body silhouette shaded by what you actually trained |
-| MyFitnessPal | Food diary, macro budget from your TDEE, water, barcode lookup |
+| MyFitnessPal | Food diary, macro budget from your TDEE, water, barcode lookup, 8 scaling meal plans |
 | Fitbit | Steps, heart rate, sleep and calories, via Health Connect *or* the Fitbit Web API |
+| — | **AI coach** — rules over your own data: deload calls, plateau detection, weak-point and diet audits |
 
 The pieces are wired together rather than bolted side by side: a logged set feeds
 the heat map, the quest board and your Vitality attribute; a synced step count
@@ -128,6 +129,46 @@ to a weekly rate, so a longer window does not simply look redder.
 Tap any muscle to see its numbers. The balance score is the coefficient of
 variation across all regions, inverted — 100 means nothing is being neglected.
 
+### The coach
+
+The Coach tab is a rules engine over your own logged data — no black box and no
+"the AI thinks". Every insight states what was measured, what it means, and one
+concrete thing to do. It covers:
+
+- **Fatigue index (0-9)** — weekly volume, sleep debt, unbroken training weeks,
+  stalled lifts and resting-heart-rate drift. Four points triggers a deload call.
+- **Plateau detection** — a lift is stalled when its estimated 1RM has not
+  improved across three sessions. Two data points is noise; three is a pattern.
+- **Weak-point audits** — cold regions on the heat map, press-to-pull ratio above
+  1.5, hamstrings under half of quad volume.
+- **Diet audits** — protein shortfall in grams, and bodyweight trend versus your
+  goal, fitted by least squares over three weeks of weigh-ins rather than
+  comparing two readings.
+
+### Auto-regulation
+
+The logger uses double progression: hold the weight until you hit the top of the
+rep range on *every* set, then add load and drop back to the bottom. Increments
+scale with the lift — 2.5 kg upper body, 5 kg lower, or 2.5% of the bar,
+whichever is larger.
+
+### Programmes
+
+Fourteen bundled plans, from Full Body 3× Week through Push/Pull/Legs to the
+competitive shelf: the Golden Era six-day split, Yates-style Blood & Guts HIT,
+FST-7, German Volume Training, 5×5, powerbuilding, a cutting block, a bro split
+and a deload week. Each carries its coaching intent, because a programme without
+a "why" is just a list of exercises.
+
+### Meal plans
+
+Eight full-day templates — cutting, high-protein cutting, maintenance, lean bulk,
+mass gain, vegetarian, budget *anak kos*, and 16:8 fasting. Each is stored as
+food slugs plus gram weights rather than a picture, so the app scales every
+portion to *your* calorie and protein target and tells you honestly where the
+result lands. Fixed items (one egg, a creatine scoop, a cup of coffee) do not
+scale. One tap logs the whole day into your diary.
+
 ### Nutrition
 
 Calorie budget is Mifflin-St Jeor × activity multiplier × goal delta. Protein is
@@ -135,8 +176,9 @@ set from bodyweight (2.2 g/kg cutting, 1.8 g/kg maintaining), fat takes 25% of
 calories with a floor, and carbohydrate takes the remainder. The headline number
 is goal − eaten + exercise, where exercise comes from your watch.
 
-The bundled food database is weighted toward Indonesian staples — nasi, tempe,
-tahu, sate, gado-gado, rendang — alongside the usual international entries,
+The bundled food database is 192 entries weighted toward Indonesian staples —
+nasi, tempe, tahu, sate, gado-gado, rendang, plus the warung and rumah makan
+dishes people actually order — alongside the usual international entries,
 because a tracker that only knows about oatmeal gets abandoned in a week.
 Barcode scanning and online search use [Open Food Facts](https://openfoodfacts.org).
 
@@ -158,7 +200,8 @@ app/src/main/java/com/sparkgym/
 │   └── repository/   Workout, nutrition, game, wearable, seed
 ├── domain/
 │   ├── model/        Muscles, hunter, quests
-│   ├── engine/       XP, attributes, quests, heat map, strength and energy maths
+│   ├── engine/       XP, attributes, quests, heat map, coach, progression,
+│   │                 meal planning, strength and energy maths
 │   └── SystemCoordinator.kt   Where logging, eating and syncing all meet
 ├── di/               Hand-rolled AppContainer (no annotation processor)
 └── ui/               One package per screen, each with its own ViewModel
@@ -169,8 +212,13 @@ repositories does not need an annotation processor, and skipping one keeps build
 fast and stack traces readable. `AppContainer` holds lazy singletons;
 `sparkViewModelFactory` wires the ViewModels in a dozen lines.
 
-**All game and fitness maths lives in `domain/engine`** as pure functions with no
-Android dependencies, which is why it is all unit-tested.
+**All game, coaching and nutrition maths lives in `domain/engine`** as pure
+functions with no Android dependencies, which is why it is all unit-tested — 60+
+tests covering the XP curve, quest scaling, heat map normalisation, progression,
+deload logic, coach rules, meal-plan scaling, and the integrity of the bundled
+content itself (every routine references a real exercise, every meal plan
+references a real food, every muscle has at least three exercises, and every
+food's macros reconcile with its calorie figure).
 
 Room is the single source of truth; every screen observes `Flow`s, so a set logged
 in the workout screen updates the heat map, the quest board and the status window

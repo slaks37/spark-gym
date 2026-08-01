@@ -218,6 +218,19 @@ class WearableRepository(
         return Triple(avgSteps, avgSleep, restingHr)
     }
 
+    /**
+     * Resting heart rate baseline: the median of the 8-30 day window, so a bad
+     * night last week does not become the thing you are compared against.
+     */
+    suspend fun restingHrBaseline(): Int? {
+        val values = mutableListOf<Int>()
+        for (day in (Dates.today() - 30)..(Dates.today() - 8)) {
+            dao.day(day)?.restingHeartRate?.let { values += it }
+        }
+        if (values.size < 5) return null
+        return values.sorted()[values.size / 2]
+    }
+
     suspend fun weeklyActiveCalories(): Double {
         val from = Dates.today() - 6
         var total = 0.0

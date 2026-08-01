@@ -8,8 +8,10 @@ import com.sparkgym.data.local.FoodEntity
 import com.sparkgym.data.prefs.UserProfile
 import com.sparkgym.data.repository.MacroTotals
 import com.sparkgym.data.repository.Meal
+import com.sparkgym.data.seed.MealPlanSeed
 import com.sparkgym.di.AppContainer
 import com.sparkgym.domain.engine.EnergyMath
+import com.sparkgym.domain.engine.MealPlanEngine
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -180,6 +182,76 @@ class NutritionViewModel(private val container: AppContainer) : ViewModel() {
         _searchError.value = null
     }
 
+    // ---------------------------------------------------------- meal plans
+
+    /** A plan reduced to what the browse list needs, already scaled. */
+    data class PlanSummary(
+        val slug: String,
+        val name: String,
+        val scaledCalories: Int,
+        val scaledProtein: Int
+    )
+
+    private val _planSummaries = MutableStateFlow<List<PlanSummary>>(emptyList())
+    val mealPlanSummaries: StateFlow<List<PlanSummary>> = _planSummaries.asStateFlow()
+
+    private val _selectedPlan = MutableStateFlow<MealPlanEngine.ScaledPlan?>(null)
+    val selectedPlan: StateFlow<MealPlanEngine.ScaledPlan?> = _selectedPlan.asStateFlow()
+
+    private val _planAdvice = MutableStateFlow<List<String>>(emptyList())
+    val planAdvice: StateFlow<List<String>> = _planAdvice.asStateFlow()
+
+    fun loadMealPlans() {
+        viewModelScope.launch {
+            val profile = container.prefs.profile.first()
+            val target = profile.macroTarget
+            _planSummaries.value = MealPlanSeed.plans.map { plan ->
+                val scaled = MealPlanEngine.scale(
+                    plan = plan,
+                    targetCalories = target.calories,
+                    targetProteinG = target.proteinG,
+                    facts = container.nutritionRepository.factsForPlan(plan)
+                )
+                PlanSummary(
+                    slug = plan.slug,
+                    name = plan.name,
+                    scaledCalories = scaled.calories.toInt(),
+                    scaledProtein = scaled.protein.toInt()
+                )
+            }
+        }
+    }
+
+    fun selectPlan(slug: String?) {
+        if (slug == null) {
+            _selectedPlan.value = null
+            _planAdvice.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            val plan = MealPlanSeed.bySlug(slug) ?: return@launch
+            val profile = container.prefs.profile.first()
+            val target = profile.macroTarget
+            val scaled = MealPlanEngine.scale(
+                plan = plan,
+                targetCalories = target.calories,
+                targetProteinG = target.proteinG,
+                facts = container.nutritionRepository.factsForPlan(plan)
+            )
+            _selectedPlan.value = scaled
+            _planAdvice.value = MealPlanEngine.adjustmentAdvice(scaled)
+        }
+    }
+
+    fun applySelectedPlan() {
+        val scaled = _selectedPlan.value ?: return
+        viewModelScope.launch {
+            container.nutritionRepository.applyMealPlan(_day.value, scaled)
+            container.coordinator.onFoodLogged()
+            _selectedPlan.value = null
+        }
+    }
+
     // ------------------------------------------------------------ progress
 
     val weeklyTotals = container.nutritionRepository
@@ -197,4 +269,10 @@ class NutritionViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     suspend fun currentProfile(): UserProfile = container.prefs.profile.first()
+
+    // Declared last on purpose: every backing flow above must exist before the
+    // first load touches it.
+    init {
+        loadMealPlans()
+    }
 }

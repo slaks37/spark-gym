@@ -7,6 +7,8 @@ import com.sparkgym.data.repository.NutritionRepository
 import com.sparkgym.data.repository.WearableRepository
 import com.sparkgym.data.repository.WorkoutRepository
 import com.sparkgym.domain.engine.AttributeEngine
+import com.sparkgym.domain.engine.CoachEngine
+import com.sparkgym.domain.engine.EnergyMath
 import com.sparkgym.domain.engine.HeatmapEngine
 import com.sparkgym.domain.engine.StrengthMath
 import com.sparkgym.domain.engine.XpEngine
@@ -173,6 +175,73 @@ class SystemCoordinator(
             recalculateAttributes()
         }
         return result
+    }
+
+    // ---------------------------------------------------------------- coach
+
+    /**
+     * Gathers every signal the coach reasons over. Deliberately one place: the
+     * rules in CoachEngine stay pure and testable because all the I/O is here.
+     */
+    suspend fun buildCoachSnapshot(): CoachEngine.Snapshot {
+        val profile = prefs.profile.first()
+        val heat = workouts.observeHeatmap(7).first()
+        val target = profile.macroTarget
+
+        val (avgSteps, avgSleep, restingHr) = wearables.weeklyAverages()
+        val baselineHr = wearables.restingHrBaseline()
+        val hrDelta = if (restingHr != null && baselineHr != null) restingHr - baselineHr else null
+
+        val weekTotals = nutrition.observeDailyTotals(Dates.today() - 6, Dates.today()).first()
+        val loggedDays = weekTotals.count { it.calories > 0 }
+
+        val history = workouts.observeHistory().first()
+
+        return CoachEngine.Snapshot(
+            heat = heat,
+            weeklyEffectiveSets = heat.values.sumOf { it.effectiveSets },
+            sessionsThisWeek = workouts.sessionsThisWeek(),
+            daysSinceLastSession = workouts.daysSinceLastSession(),
+            trainingStreakDays = workouts.trainingStreak(),
+            consecutiveTrainingWeeks = workouts.consecutiveTrainingWeeks(),
+            stalledLifts = workouts.stalledLifts(),
+            recentPrCount = workouts.recentPrCount(),
+            avgSleepMinutes = avgSleep,
+            avgDailySteps = avgSteps,
+            restingHrDelta = hrDelta,
+            proteinTargetG = target.proteinG,
+            avgProteinG = if (loggedDays > 0) weekTotals.filter { it.calories > 0 }.map { it.protein }.average() else 0.0,
+            avgCaloriesLogged = if (loggedDays > 0) weekTotals.filter { it.calories > 0 }.map { it.calories }.average() else 0.0,
+            calorieTarget = target.calories,
+            daysLoggedThisWeek = loggedDays,
+            weightTrendKgPerWeek = weightTrend(),
+            goalIsCut = profile.goal == EnergyMath.Goal.CUT,
+            goalIsBulk = profile.goal == EnergyMath.Goal.BULK || profile.goal == EnergyMath.Goal.LEAN_BULK,
+            totalSessions = history.size
+        )
+    }
+
+    suspend fun coachInsights(): List<CoachEngine.Insight> = CoachEngine.analyse(buildCoachSnapshot())
+
+    /**
+     * Bodyweight change per week, from a least-squares fit over the last three
+     * weeks of weigh-ins. A single pair of readings is mostly water, which is
+     * why this needs at least four points before it will answer.
+     */
+    private suspend fun weightTrend(): Double? {
+        val metrics = nutrition.observeBodyMetrics().first()
+            .filter { it.dateEpochDay >= Dates.today() - 21 }
+            .sortedBy { it.dateEpochDay }
+        if (metrics.size < 4) return null
+
+        val xs = metrics.map { it.dateEpochDay.toDouble() }
+        val ys = metrics.map { it.weightKg }
+        val meanX = xs.average()
+        val meanY = ys.average()
+        val denominator = xs.sumOf { (it - meanX) * (it - meanX) }
+        if (denominator == 0.0) return null
+        val slopePerDay = xs.indices.sumOf { (xs[it] - meanX) * (ys[it] - meanY) } / denominator
+        return slopePerDay * 7
     }
 
     /** The dashboard's "what should I do about it" line under the heat map. */

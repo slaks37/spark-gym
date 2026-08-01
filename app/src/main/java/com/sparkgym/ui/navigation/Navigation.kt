@@ -2,6 +2,7 @@ package com.sparkgym.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Restaurant
@@ -10,6 +11,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Destination(val route: String) {
     data object Status : Destination("status")
+    data object Coach : Destination("coach")
+    data object MealPlans : Destination("meal-plans")
     data object Quests : Destination("quests")
     data object Workout : Destination("workout")
     data object Heatmap : Destination("heatmap")
@@ -48,6 +51,7 @@ data class BottomTab(
 
 val bottomTabs = listOf(
     BottomTab(Destination.Status, "Status", Icons.Filled.Person),
+    BottomTab(Destination.Coach, "Coach", Icons.Filled.Insights),
     BottomTab(Destination.Quests, "Quests", Icons.Filled.LocalFireDepartment),
     BottomTab(Destination.Workout, "Train", Icons.Filled.FitnessCenter),
     BottomTab(Destination.Heatmap, "Body", Icons.Filled.Whatshot),

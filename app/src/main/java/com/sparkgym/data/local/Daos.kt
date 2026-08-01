@@ -210,6 +210,40 @@ interface WorkoutDao {
     @Query("SELECT DISTINCT dateEpochDay FROM workout_sessions WHERE finishedAt IS NOT NULL ORDER BY dateEpochDay DESC LIMIT :limit")
     suspend fun recentTrainingDays(limit: Int = 400): List<Long>
 
+    /**
+     * Best working set per session for one exercise, oldest first — the series
+     * the plateau detector runs over.
+     */
+    @Query(
+        """
+        SELECT w.dateEpochDay AS dateEpochDay,
+               MAX(s.weightKg * (1 + s.reps / 30.0)) AS volumeKg,
+               COUNT(s.id) AS sets
+        FROM set_logs s
+        JOIN workout_sessions w ON w.id = s.sessionId
+        WHERE s.exerciseId = :exerciseId AND s.isCompleted = 1 AND s.isWarmup = 0
+          AND s.weightKg > 0 AND s.reps > 0 AND w.finishedAt IS NOT NULL
+        GROUP BY w.id
+        ORDER BY w.startedAt ASC
+        LIMIT :limit
+        """
+    )
+    suspend fun estimatedMaxHistory(exerciseId: Long, limit: Int = 12): List<VolumePointRow>
+
+    @Query(
+        """
+        SELECT s.exerciseId FROM set_logs s
+        JOIN workout_sessions w ON w.id = s.sessionId
+        WHERE s.isCompleted = 1 AND s.isWarmup = 0 AND s.weightKg > 0
+          AND w.finishedAt IS NOT NULL
+        GROUP BY s.exerciseId
+        HAVING COUNT(DISTINCT w.id) >= 4
+        ORDER BY COUNT(s.id) DESC
+        LIMIT :limit
+        """
+    )
+    suspend fun mostTrainedExerciseIds(limit: Int = 8): List<Long>
+
     @Upsert
     suspend fun upsertPr(pr: PersonalRecordEntity)
 
@@ -237,6 +271,12 @@ interface NutritionDao {
 
     @Query("SELECT * FROM foods WHERE barcode = :barcode LIMIT 1")
     suspend fun foodByBarcode(barcode: String): FoodEntity?
+
+    @Query("SELECT * FROM foods WHERE slug = :slug LIMIT 1")
+    suspend fun foodBySlug(slug: String): FoodEntity?
+
+    @Query("SELECT * FROM foods WHERE slug IN (:slugs)")
+    suspend fun foodsBySlugs(slugs: List<String>): List<FoodEntity>
 
     @Query(
         """
@@ -286,6 +326,9 @@ interface NutritionDao {
 
     @Query("SELECT COUNT(*) FROM diary_entries WHERE dateEpochDay = :day")
     suspend fun entryCountOn(day: Long): Int
+
+    @Query("SELECT COUNT(DISTINCT dateEpochDay) FROM diary_entries WHERE dateEpochDay BETWEEN :fromDay AND :toDay")
+    suspend fun loggedDayCount(fromDay: Long, toDay: Long): Int
 
     @Query("SELECT * FROM water_logs WHERE dateEpochDay = :day")
     fun observeWater(day: Long): Flow<WaterLogEntity?>

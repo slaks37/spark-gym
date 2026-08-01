@@ -6,6 +6,8 @@ import com.sparkgym.data.local.DiaryEntryEntity
 import com.sparkgym.data.local.FoodEntity
 import com.sparkgym.data.local.SparkGymDatabase
 import com.sparkgym.data.local.WaterLogEntity
+import com.sparkgym.data.seed.SeedMealPlan
+import com.sparkgym.domain.engine.MealPlanEngine
 import com.sparkgym.data.remote.OffProduct
 import com.sparkgym.data.remote.OpenFoodFactsApi
 import kotlinx.coroutines.flow.Flow
@@ -177,6 +179,54 @@ class NutritionRepository(
     suspend fun deleteEntry(id: Long) = dao.deleteEntry(id)
 
     suspend fun proteinOn(day: Long) = dao.proteinOn(day)
+
+    suspend fun loggedDayCount(fromDay: Long, toDay: Long) = dao.loggedDayCount(fromDay, toDay)
+
+    // ------------------------------------------------------------ meal plans
+
+    /** Nutrition facts for the foods a plan references, keyed by slug. */
+    suspend fun factsForPlan(plan: SeedMealPlan): Map<String, MealPlanEngine.FoodFacts> {
+        val slugs = plan.slots.flatMap { slot -> slot.items.map { it.foodSlug } }.distinct()
+        return dao.foodsBySlugs(slugs).mapNotNull { food ->
+            food.slug?.let { slug ->
+                slug to MealPlanEngine.FoodFacts(
+                    slug = slug,
+                    name = food.name,
+                    caloriesPer100 = food.caloriesPer100,
+                    proteinPer100 = food.proteinPer100,
+                    carbsPer100 = food.carbsPer100,
+                    fatPer100 = food.fatPer100
+                )
+            }
+        }.toMap()
+    }
+
+    /**
+     * Writes a scaled plan into the diary. Existing entries for the day are left
+     * alone — applying a plan adds to what you ate, it does not pretend the
+     * morning did not happen.
+     */
+    suspend fun applyMealPlan(day: Long, scaled: MealPlanEngine.ScaledPlan) {
+        for (slot in scaled.slots) {
+            for (item in slot.items) {
+                val food = dao.foodBySlug(item.slug)
+                dao.insertEntry(
+                    DiaryEntryEntity(
+                        dateEpochDay = day,
+                        meal = slot.meal.name,
+                        foodId = food?.id,
+                        name = item.name,
+                        brand = food?.brand.orEmpty(),
+                        grams = item.grams,
+                        calories = item.calories,
+                        protein = item.protein,
+                        carbs = item.carbs,
+                        fat = item.fat
+                    )
+                )
+            }
+        }
+    }
 
     suspend fun entryCountOn(day: Long) = dao.entryCountOn(day)
 

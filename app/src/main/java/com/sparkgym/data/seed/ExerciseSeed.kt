@@ -25,7 +25,10 @@ data class SeedExercise(
  */
 object ExerciseSeed {
 
-    val exercises: List<SeedExercise> = listOf(
+    /** The full library: foundational movements plus the advanced/machine half. */
+    val exercises: List<SeedExercise> get() = foundational + ExerciseSeedAdvanced.exercises
+
+    private val foundational: List<SeedExercise> = listOf(
 
         // ---------------- Chest ----------------
         SeedExercise(
