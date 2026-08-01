@@ -63,6 +63,14 @@ jobs:
     permissions:
       contents: write
 
+    # `secrets` cannot be read from an `if:` condition, so the keystore is
+    # hoisted to the job environment where a step condition can see it.
+    env:
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
     steps:
       - uses: actions/checkout@v4
       - uses: gradle/actions/wrapper-validation@v4
@@ -81,18 +89,13 @@ jobs:
       # installable. Without them the job still publishes the unsigned APK, which
       # is useful for inspection but will not install until it is signed.
       - name: Sign APK
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
-        env:
-          KEYSTORE: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        if: env.KEYSTORE_BASE64 != ''
         run: |
           set -euo pipefail
           # Pick whichever build-tools the runner actually has rather than
           # pinning a version that may not be installed.
           APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
-          printenv KEYSTORE | base64 -d > "$RUNNER_TEMP/release.jks"
+          printenv KEYSTORE_BASE64 | base64 -d > "$RUNNER_TEMP/release.jks"
           trap 'rm -f "$RUNNER_TEMP/release.jks"' EXIT
           "$APKSIGNER" sign \
             --ks "$RUNNER_TEMP/release.jks" \
