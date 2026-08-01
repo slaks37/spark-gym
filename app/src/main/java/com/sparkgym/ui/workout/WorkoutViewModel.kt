@@ -9,6 +9,7 @@ import com.sparkgym.data.local.RoutineDayEntity
 import com.sparkgym.data.local.RoutineEntity
 import com.sparkgym.data.local.WorkoutSessionEntity
 import com.sparkgym.di.AppContainer
+import com.sparkgym.domain.engine.ExerciseSearch
 import com.sparkgym.domain.model.Equipment
 import com.sparkgym.domain.model.Muscle
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,18 +45,43 @@ class WorkoutViewModel(private val container: AppContainer) : ViewModel() {
 
     val library: StateFlow<List<ExerciseWithMuscles>> =
         combine(container.workoutRepository.observeExercises(), _filters) { all, f ->
-            all.filter { item ->
+            all.mapNotNull { item ->
                 val e = item.exercise
-                val matchesQuery = f.query.isBlank() || e.name.contains(f.query, ignoreCase = true)
-                val matchesMuscle = f.muscle == null || item.muscles.any { it.muscle == f.muscle.name }
-                val matchesEquipment = f.equipment == null || e.equipment == f.equipment
-                val matchesFavorite = !f.favoritesOnly || e.isFavorite
-                val matchesHome = !f.homeOnly || e.equipment.isHomeFriendly
-                matchesQuery && matchesMuscle && matchesEquipment && matchesFavorite && matchesHome
+                if (f.muscle != null && item.muscles.none { it.muscle == f.muscle.name }) return@mapNotNull null
+                if (f.equipment != null && e.equipment != f.equipment) return@mapNotNull null
+                if (f.favoritesOnly && !e.isFavorite) return@mapNotNull null
+                if (f.homeOnly && !e.equipment.isHomeFriendly) return@mapNotNull null
+
+                // The query is matched against muscles and equipment as well as
+                // the name, so "dada" finds every chest movement.
+                val score = ExerciseSearch.score(
+                    f.query,
+                    ExerciseSearch.Candidate(
+                        name = e.name,
+                        equipment = e.equipment,
+                        primary = item.muscles.filter { it.contribution >= 1f }
+                            .mapNotNull { Muscle.fromKey(it.muscle) }.toSet(),
+                        secondary = item.muscles.filter { it.contribution < 1f }
+                            .mapNotNull { Muscle.fromKey(it.muscle) }.toSet()
+                    )
+                ) ?: return@mapNotNull null
+                item to score
             }
+                // Best match first, then alphabetical so the order is stable.
+                .sortedWith(compareByDescending<Pair<ExerciseWithMuscles, Int>> { it.second }
+                    .thenBy { it.first.exercise.name })
+                .map { it.first }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun setQuery(query: String) = _filters.update { it.copy(query = query) }
+
+    /**
+     * Muscles the typed text names. Surfaced as tappable chips so a search for
+     * "punggung" can be promoted into a real filter in one tap.
+     */
+    val querySuggestions: StateFlow<List<Muscle>> = _filters
+        .map { if (it.muscle == null) ExerciseSearch.musclesFor(it.query).take(4) else emptyList() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     fun setMuscle(muscle: Muscle?) = _filters.update { it.copy(muscle = muscle) }
     fun setEquipment(equipment: Equipment?) = _filters.update { it.copy(equipment = equipment) }
     fun toggleFavoritesOnly() = _filters.update { it.copy(favoritesOnly = !it.favoritesOnly) }

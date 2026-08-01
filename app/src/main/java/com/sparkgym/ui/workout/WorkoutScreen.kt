@@ -50,6 +50,7 @@ import com.sparkgym.domain.model.Equipment
 import com.sparkgym.domain.model.Muscle
 import com.sparkgym.ui.common.ChipRow
 import com.sparkgym.ui.common.ExerciseCard
+import com.sparkgym.ui.common.muscleGroupColor
 import com.sparkgym.ui.common.SelectableChip
 import com.sparkgym.ui.common.SparkTextField
 
@@ -207,23 +208,44 @@ private fun RoutinesTab(
 private fun LibraryTab(viewModel: WorkoutViewModel, onOpenExercise: (Long) -> Unit) {
     val library by viewModel.library.collectAsStateWithLifecycle()
     val filters by viewModel.filters.collectAsStateWithLifecycle()
+    val suggestions by viewModel.querySuggestions.collectAsStateWithLifecycle()
 
     Column {
         Column(Modifier.padding(horizontal = 16.dp)) {
             SparkTextField(
                 value = filters.query,
                 onValueChange = viewModel::setQuery,
-                label = S.searchExercises,
+                label = S.searchHint,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // A typed body-part word is offered as a real filter, so "punggung"
+            // becomes a Lats chip in one tap instead of staying a fuzzy query.
+            if (suggestions.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(S.didYouMean, style = SystemLabel)
+                    Spacer(Modifier.width(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        suggestions.forEach { m ->
+                            SelectableChip(
+                                text = S.muscle(m),
+                                selected = false,
+                                onClick = { viewModel.setQuery(""); viewModel.setMuscle(m) },
+                                accent = muscleGroupColor(m.group)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+            BodyPartPicker(
+                selected = filters.muscle,
+                onSelect = viewModel::setMuscle,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(10.dp))
-            ChipRow(
-                options = Muscle.entries.toList(),
-                selected = filters.muscle,
-                label = { it.displayName },
-                onSelect = viewModel::setMuscle
-            )
-            Spacer(Modifier.height(8.dp))
             ChipRow(
                 options = Equipment.entries.toList(),
                 selected = filters.equipment,

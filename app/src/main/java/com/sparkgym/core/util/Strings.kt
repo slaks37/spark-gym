@@ -3,6 +3,8 @@ package com.sparkgym.core.util
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import com.sparkgym.data.seed.SeedStretch
+import com.sparkgym.domain.model.Muscle
+import com.sparkgym.domain.model.MuscleGroup
 
 /**
  * Bilingual string table.  Every user-visible label lives here so flipping
@@ -164,6 +166,23 @@ object S {
 
     @Composable @ReadOnlyComposable
     fun stretchHowTo(stretch: SeedStretch): String = pick(stretch.howToEn, stretch.howToId)
+
+
+    // ── Library search ───────────────────────────────────────────────
+    val tapBodyPart @Composable @ReadOnlyComposable get() =
+        pick("Or tap the body part you want to train", "Atau ketuk bagian tubuh yang ingin dilatih")
+    val clear @Composable @ReadOnlyComposable get() = pick("Clear", "Hapus")
+    val searchHint @Composable @ReadOnlyComposable get() =
+        pick("Exercise, muscle or kit — try \"chest\"", "Latihan, otot atau alat — coba \"dada\"")
+    val didYouMean @Composable @ReadOnlyComposable get() = pick("Filter by", "Saring menurut")
+    val resultsFor @Composable @ReadOnlyComposable get() = pick("results", "hasil")
+
+    /** Muscle and group names follow the selected language. */
+    @Composable @ReadOnlyComposable
+    fun muscle(m: Muscle): String = pick(m.displayName, m.nameId)
+
+    @Composable @ReadOnlyComposable
+    fun muscleGroup(g: MuscleGroup): String = pick(g.displayName, g.nameId)
 
     private fun pick(en: String, id: String): String = when (lang) {
         AppLanguage.EN -> en

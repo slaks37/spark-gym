@@ -7,36 +7,44 @@ package com.sparkgym.domain.model
  */
 enum class Muscle(
     val displayName: String,
+    /** Indonesian name, shown when the app language is ID. */
+    val nameId: String,
     val group: MuscleGroup,
-    val side: BodySide
+    val side: BodySide,
+    /**
+     * What people actually type. Nobody searching for lat pulldowns types
+     * "latissimus" — they type "punggung", "sayap" or "back". Gym slang and
+     * everyday body-part words matter more here than anatomical correctness.
+     */
+    val aliases: List<String> = emptyList()
 ) {
-    CHEST("Chest", MuscleGroup.PUSH, BodySide.FRONT),
-    FRONT_DELTS("Front Delts", MuscleGroup.PUSH, BodySide.FRONT),
-    SIDE_DELTS("Side Delts", MuscleGroup.PUSH, BodySide.FRONT),
-    REAR_DELTS("Rear Delts", MuscleGroup.PULL, BodySide.BACK),
-    TRICEPS("Triceps", MuscleGroup.PUSH, BodySide.BACK),
-    BICEPS("Biceps", MuscleGroup.PULL, BodySide.FRONT),
-    FOREARMS("Forearms", MuscleGroup.PULL, BodySide.FRONT),
-    ABS("Abs", MuscleGroup.CORE, BodySide.FRONT),
-    OBLIQUES("Obliques", MuscleGroup.CORE, BodySide.FRONT),
-    LATS("Lats", MuscleGroup.PULL, BodySide.BACK),
-    TRAPS("Traps", MuscleGroup.PULL, BodySide.BACK),
-    LOWER_BACK("Lower Back", MuscleGroup.PULL, BodySide.BACK),
-    GLUTES("Glutes", MuscleGroup.LEGS, BodySide.BACK),
-    QUADS("Quads", MuscleGroup.LEGS, BodySide.FRONT),
-    HAMSTRINGS("Hamstrings", MuscleGroup.LEGS, BodySide.BACK),
-    ADDUCTORS("Adductors", MuscleGroup.LEGS, BodySide.FRONT),
-    ABDUCTORS("Abductors", MuscleGroup.LEGS, BodySide.BACK),
-    CALVES("Calves", MuscleGroup.LEGS, BodySide.BACK),
-    NECK("Neck", MuscleGroup.CORE, BodySide.BACK);
+    CHEST("Chest", "Dada", MuscleGroup.PUSH, BodySide.FRONT, listOf("pecs", "pectoral", "dada atas", "dada bawah")),
+    FRONT_DELTS("Front Delts", "Bahu Depan", MuscleGroup.PUSH, BodySide.FRONT, listOf("shoulder", "bahu", "deltoid", "delt")),
+    SIDE_DELTS("Side Delts", "Bahu Samping", MuscleGroup.PUSH, BodySide.FRONT, listOf("shoulder", "bahu", "deltoid", "delt", "lateral")),
+    REAR_DELTS("Rear Delts", "Bahu Belakang", MuscleGroup.PULL, BodySide.BACK, listOf("shoulder", "bahu", "deltoid", "delt")),
+    TRICEPS("Triceps", "Trisep", MuscleGroup.PUSH, BodySide.BACK, listOf("arm", "lengan", "lengan belakang")),
+    BICEPS("Biceps", "Bisep", MuscleGroup.PULL, BodySide.FRONT, listOf("arm", "lengan", "lengan depan", "otot lengan")),
+    FOREARMS("Forearms", "Lengan Bawah", MuscleGroup.PULL, BodySide.FRONT, listOf("grip", "genggaman", "pergelangan", "arm", "lengan")),
+    ABS("Abs", "Perut", MuscleGroup.CORE, BodySide.FRONT, listOf("sixpack", "six pack", "core", "inti", "abdominal")),
+    OBLIQUES("Obliques", "Perut Samping", MuscleGroup.CORE, BodySide.FRONT, listOf("pinggang", "core", "inti", "samping")),
+    LATS("Lats", "Sayap", MuscleGroup.PULL, BodySide.BACK, listOf("punggung", "back", "latissimus", "punggung samping")),
+    TRAPS("Traps", "Trapezius", MuscleGroup.PULL, BodySide.BACK, listOf("punggung", "back", "pundak", "punggung atas")),
+    LOWER_BACK("Lower Back", "Punggung Bawah", MuscleGroup.PULL, BodySide.BACK, listOf("punggung", "back", "pinggang", "erector")),
+    GLUTES("Glutes", "Bokong", MuscleGroup.LEGS, BodySide.BACK, listOf("pantat", "butt", "pinggul", "glute")),
+    QUADS("Quads", "Paha Depan", MuscleGroup.LEGS, BodySide.FRONT, listOf("leg", "kaki", "paha", "quadriceps")),
+    HAMSTRINGS("Hamstrings", "Paha Belakang", MuscleGroup.LEGS, BodySide.BACK, listOf("leg", "kaki", "paha", "hamstring")),
+    ADDUCTORS("Adductors", "Paha Dalam", MuscleGroup.LEGS, BodySide.FRONT, listOf("leg", "kaki", "paha", "inner thigh", "selangkangan")),
+    ABDUCTORS("Abductors", "Paha Luar", MuscleGroup.LEGS, BodySide.BACK, listOf("leg", "kaki", "paha", "outer thigh", "pinggul")),
+    CALVES("Calves", "Betis", MuscleGroup.LEGS, BodySide.BACK, listOf("leg", "kaki", "calf")),
+    NECK("Neck", "Leher", MuscleGroup.CORE, BodySide.BACK, listOf("neck", "tengkuk"));
 
     companion object {
         fun fromKey(key: String): Muscle? = entries.firstOrNull { it.name == key }
     }
 }
 
-enum class MuscleGroup(val displayName: String) {
-    PUSH("Push"), PULL("Pull"), LEGS("Legs"), CORE("Core")
+enum class MuscleGroup(val displayName: String, val nameId: String) {
+    PUSH("Push", "Dorong"), PULL("Pull", "Tarik"), LEGS("Legs", "Kaki"), CORE("Core", "Inti")
 }
 
 /** Which silhouette a muscle is drawn on. Some are drawn on both. */
