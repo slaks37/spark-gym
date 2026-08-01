@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Spark Gym is light-only. This file exists so that a phone in night mode
+  resolves to exactly the same theme as one in day mode, instead of falling
+  back to any platform dark variant.
+-->
+<resources>
+
+    <style name="Theme.SparkGym" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/system_void</item>
+        <item name="android:navigationBarColor">@color/system_void</item>
+        <item name="android:windowBackground">@color/system_void</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:forceDarkAllowed">false</item>
+    </style>
+
+</resources>

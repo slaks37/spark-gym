@@ -41,6 +41,7 @@ import com.sparkgym.core.design.SystemPanel
 import com.sparkgym.core.util.Dates
 import com.sparkgym.core.util.S
 import com.sparkgym.data.local.SetLogEntity
+import com.sparkgym.data.seed.StretchSeed
 import com.sparkgym.di.AppContainer
 import com.sparkgym.domain.engine.StrengthMath
 import com.sparkgym.domain.model.Muscle
@@ -181,6 +182,50 @@ fun ExerciseDetailScreen(
                                     )
                                 }
                             }
+                    }
+                }
+            }
+        }
+
+        // ---- What to stretch afterwards ----
+        val stretches = StretchSeed.forExercise(primary, secondary).take(3)
+        if (stretches.isNotEmpty()) {
+            item {
+                Column(Modifier.padding(horizontal = 16.dp)) {
+                    SystemPanel(title = S.stretchAfter, accent = SparkColors.Success) {
+                        Text(
+                            S.stretchWhy,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SparkColors.TextMuted
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        stretches.forEach { st ->
+                            Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.Top) {
+                                Box(
+                                    Modifier
+                                        .size(width = 4.dp, height = 34.dp)
+                                        .background(muscleGroupColor(st.muscle.group))
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            S.stretchName(st),
+                                            style = MaterialTheme.typography.titleSmall,
+                                            color = SparkColors.TextPrimary
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        SystemChip("${st.holdSeconds}s", accent = SparkColors.Success)
+                                    }
+                                    Spacer(Modifier.height(3.dp))
+                                    Text(
+                                        S.stretchHowTo(st),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = SparkColors.TextSecondary
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

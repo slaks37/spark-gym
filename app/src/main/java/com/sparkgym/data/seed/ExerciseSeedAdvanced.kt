@@ -480,6 +480,37 @@ object ExerciseSeedAdvanced {
         ),
 
         SeedExercise(
+            "neck-harness-extension", "Neck Harness Extension", Equipment.OTHER, Force.PULL,
+            Diff.ADVANCED, Track.WEIGHT_REPS,
+            listOf(Muscle.NECK), listOf(Muscle.TRAPS),
+            "Harness on, plate hanging in front, hinge at the hips. Full range, three seconds down. This is the movement that actually builds neck thickness."
+        ),
+        SeedExercise(
+            "wrestlers-bridge", "Wrestler's Bridge", Equipment.BODYWEIGHT, Force.STATIC,
+            Diff.ADVANCED, Track.DURATION,
+            listOf(Muscle.NECK), listOf(Muscle.TRAPS, Muscle.LOWER_BACK),
+            "Back bridge with weight through the crown of the head. Earn it over months — start with hands taking most of the load and remove them slowly."
+        ),
+        SeedExercise(
+            "front-neck-bridge", "Front Neck Bridge", Equipment.BODYWEIGHT, Force.STATIC,
+            Diff.ADVANCED, Track.DURATION,
+            listOf(Muscle.NECK),
+            instructions = "Face down, forehead on a mat, hands off the floor. Trains the front of the neck, which the back bridge misses entirely."
+        ),
+        SeedExercise(
+            "banded-neck-flexion", "Banded Neck Flexion", Equipment.BAND, Force.PULL,
+            Diff.BEGINNER, Track.REPS_ONLY,
+            listOf(Muscle.NECK),
+            instructions = "Band anchored behind you, looped round the head. Tuck the chin through a full range. The safest way to load the neck without a harness."
+        ),
+        SeedExercise(
+            "chin-tuck", "Chin Tuck", Equipment.BODYWEIGHT, Force.PULL,
+            Diff.BEGINNER, Track.REPS_ONLY,
+            listOf(Muscle.NECK),
+            instructions = "Draw the chin straight back to make a double chin, hold two seconds. Trains the deep neck flexors — the ones a phone-shaped posture switches off."
+        ),
+
+        SeedExercise(
             "sandbag-carry", "Sandbag Carry", Equipment.OTHER, Force.CARRY,
             Diff.INTERMEDIATE, Track.DURATION,
             listOf(Muscle.ABS, Muscle.TRAPS), listOf(Muscle.LOWER_BACK, Muscle.GLUTES, Muscle.FOREARMS),

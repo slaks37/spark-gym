@@ -1,10 +1,21 @@
 # Spark Gym
 
+[![Platform](https://img.shields.io/badge/platform-Android%208.0%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com)
+[![Language](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![UI](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+[![Tests](https://img.shields.io/badge/tests-98%20passing-16A34A)](app/src/test/java/com/sparkgym)
+[![Exercises](https://img.shields.io/badge/exercises-239-E8A317)](app/src/main/java/com/sparkgym/data/seed)
+[![Programmes](https://img.shields.io/badge/programmes-14-0099CC)](app/src/main/java/com/sparkgym/data/seed/RoutineSeedPro.kt)
+[![Foods](https://img.shields.io/badge/foods-192-16A34A)](app/src/main/java/com/sparkgym/data/seed/FoodSeed.kt)
+[![Languages](https://img.shields.io/badge/i18n-EN%20%7C%20ID-7C4DFF)](app/src/main/java/com/sparkgym/core/util/Strings.kt)
+[![Offline](https://img.shields.io/badge/offline-first-64748B)](#privacy)
+[![No trackers](https://img.shields.io/badge/trackers-none-E53945)](#privacy)
+
 An Android training app that puts four things most people juggle across four apps into one:
 
 | Inspiration | What it contributes here |
 |---|---|
-| Muscle Monster / home-gym planners | 14 bundled programmes, a 171-exercise library, home-friendly filters |
+| Muscle Monster / home-gym planners | 14 bundled programmes, a 239-exercise library, home-friendly filters |
 | Arise (Solo Leveling) | Levels, ranks, six attributes, daily quests, penalties, achievements |
 | Gym Log / Gym Trainer | The set-by-set logger, rest timer, personal records, volume history |
 | — | **Muscle heat map** — a body silhouette shaded by what you actually trained |
@@ -223,6 +234,49 @@ food's macros reconcile with its calorie figure).
 Room is the single source of truth; every screen observes `Flow`s, so a set logged
 in the workout screen updates the heat map, the quest board and the status window
 without any of them knowing about each other.
+
+---
+
+## Community
+
+Contributions are welcome, and the content is the easiest place to start — you
+do not need to know Compose to add an exercise or fix a translation.
+
+**Good first contributions**
+
+| What | Where | Notes |
+|---|---|---|
+| Add an exercise | `data/seed/ExerciseSeed*.kt` | Needs prime movers *and* synergists — the heat map is only as honest as that mapping |
+| Add a food | `data/seed/FoodSeed*.kt` | Macros per 100 g; a test checks they reconcile with the calorie figure |
+| Add a meal plan | `data/seed/MealPlanSeed.kt` | Food slugs plus grams, and the engine scales it to each user |
+| Add a stretch | `data/seed/StretchSeed.kt` | One per muscle, both languages |
+| Improve a translation | `core/util/Strings.kt` | Every user-visible string lives in one table |
+| Add a programme | `data/seed/RoutineSeedPro.kt` | Write down the coaching intent, not just the sets |
+
+**Before you open a pull request**
+
+```bash
+./gradlew test          # the content tests will catch most data mistakes
+./gradlew assembleDebug
+```
+
+The test suite deliberately guards the content, not just the code: every routine
+has to reference a real exercise, every meal plan a real food, every muscle needs
+at least ten exercises and a stretch, and every food's macros have to reconcile
+with its stated calories. If you add content and a test goes red, the test is
+usually right.
+
+**Reporting something**
+
+Open an issue with your device, Android version, and what you expected. For
+anything involving the coach or the heat map, the numbers it showed you are more
+useful than a screenshot of the screen.
+
+**House style**
+
+Comments explain *why*, never *what*. British spelling in prose. Coaching text
+should sound like a coach talking, not a manual — the existing entries are the
+reference.
 
 ---
 

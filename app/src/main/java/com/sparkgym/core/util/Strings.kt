@@ -2,6 +2,7 @@ package com.sparkgym.core.util
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import com.sparkgym.data.seed.SeedStretch
 
 /**
  * Bilingual string table.  Every user-visible label lives here so flipping
@@ -147,6 +148,22 @@ object S {
     val removePhoto @Composable @ReadOnlyComposable get() = pick("Remove", "Hapus")
     val language @Composable @ReadOnlyComposable get() = pick("Language", "Bahasa")
     val tapToAddPhoto @Composable @ReadOnlyComposable get() = pick("Tap to add a photo", "Ketuk untuk menambah foto")
+
+
+    // ── Stretching ───────────────────────────────────────────────────
+    val stretchAfter @Composable @ReadOnlyComposable get() = pick("Stretch after", "Peregangan setelah")
+    val stretchWhy @Composable @ReadOnlyComposable get() =
+        pick(
+            "Hold these after training, never before — stretching a cold muscle before a heavy set reduces the force it can produce.",
+            "Lakukan setelah latihan, jangan sebelumnya — meregangkan otot dingin sebelum set berat menurunkan tenaga yang bisa dikeluarkan."
+        )
+
+    /** The stretch table carries both languages, so pick the right column. */
+    @Composable @ReadOnlyComposable
+    fun stretchName(stretch: SeedStretch): String = pick(stretch.nameEn, stretch.nameId)
+
+    @Composable @ReadOnlyComposable
+    fun stretchHowTo(stretch: SeedStretch): String = pick(stretch.howToEn, stretch.howToId)
 
     private fun pick(en: String, id: String): String = when (lang) {
         AppLanguage.EN -> en

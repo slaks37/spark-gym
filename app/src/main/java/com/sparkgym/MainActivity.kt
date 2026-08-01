@@ -1,9 +1,11 @@
 package com.sparkgym
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -24,7 +26,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // Without arguments this follows the *system* dark-mode setting and
+        // scrims both bars dark on a dark-mode phone, which reads as the app
+        // still being dark even though every surface inside it is light.
+        // Spark Gym is light-only, so say so explicitly.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        )
 
         // Hold the splash until we know whether to show onboarding, so the user
         // never sees the dashboard flash before being redirected.

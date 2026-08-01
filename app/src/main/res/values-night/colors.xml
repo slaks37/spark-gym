@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Identical to values/colors.xml: night mode must not darken anything. -->
+<resources>
+    <color name="system_void">#F5F7FA</color>
+    <color name="system_cyan">#0099CC</color>
+    <color name="ic_launcher_background">#F5F7FA</color>
+</resources>

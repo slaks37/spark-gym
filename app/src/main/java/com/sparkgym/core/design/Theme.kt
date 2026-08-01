@@ -1,7 +1,6 @@
 package com.sparkgym.core.design
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
@@ -70,9 +69,14 @@ val SystemLabel = TextStyle(
     color = SparkColors.TextMuted
 )
 
+/**
+ * Spark Gym is light-only by design — a gym floor is a bright place and the
+ * heat map needs a white backdrop to read. There is deliberately no dark
+ * scheme and no [isSystemInDarkTheme] switch: an unused `darkTheme` parameter
+ * here is exactly how an app drifts back to being dark by accident.
+ */
 @Composable
 fun SparkGymTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
     val view = LocalView.current
