@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Only what the app actually exercises. Food lookup and the Fitbit link are
+         the sole reasons to reach the network; everything else works offline.
+         Notification, vibration, wake-lock, foreground-service and step-sensor
+         permissions were declared here before the features that would need them
+         existed, so they are left out until they do — an unused permission is a
+         Play review finding and, worse, a promise to the user that is not kept. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
-    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
 
     <!-- Health Connect: the bridge that lets Fitbit (and Wear OS, Samsung Health, …)
          hand us steps / heart rate / sleep / calories without a vendor account. -->
@@ -21,7 +21,6 @@
     <uses-permission android:name="android.permission.health.READ_WEIGHT" />
     <uses-permission android:name="android.permission.health.WRITE_EXERCISE" />
     <uses-permission android:name="android.permission.health.WRITE_ACTIVE_CALORIES_BURNED" />
-    <uses-permission android:name="android.permission.health.WRITE_WEIGHT" />
 
     <queries>
         <package android:name="com.google.android.apps.healthdata" />

@@ -3,6 +3,7 @@
 [![Platform](https://img.shields.io/badge/platform-Android%208.0%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com)
 [![Language](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![UI](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+[![Build](https://github.com/slaks37/spark-gym/actions/workflows/build.yml/badge.svg)](https://github.com/slaks37/spark-gym/actions/workflows/build.yml)
 [![Licence](https://img.shields.io/badge/licence-MIT-0EA5E9)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-118%20passing-16A34A)](app/src/test/java/com/sparkgym)
 [![Exercises](https://img.shields.io/badge/exercises-239-E8A317)](app/src/main/java/com/sparkgym/data/seed)
@@ -30,10 +31,17 @@ feeds Agility and your calorie budget; a logged meal feeds Intellect.
 
 ---
 
-## Build it
+## Install it
 
-Requirements: **JDK 17**, **Android Studio Ladybug or newer** (or just the Android SDK with
-`compileSdk 35` installed).
+**Without building anything:** every push is built by CI, so grab the APK from the
+[Actions tab](../../actions/workflows/build.yml) — open the newest run and download
+`spark-gym-debug-apk`. It is signed with the standard debug key, so it installs on
+any phone once "install from unknown sources" is allowed for your browser or file
+manager. Tagged versions (`v1.0.0`, …) also appear under
+[Releases](../../releases).
+
+**Building it yourself.** Requirements: **JDK 17**, **Android Studio Ladybug or
+newer** (or just the Android SDK with `compileSdk 35` installed).
 
 ```bash
 git clone <this repo>
@@ -45,6 +53,11 @@ cd spark-gym
 
 Opening the folder in Android Studio and pressing Run works too — no extra setup
 is needed for everything except the direct Fitbit link (below).
+
+**Publishing a signed release** is opt-in. Set `KEYSTORE_BASE64`,
+`KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD` as repository secrets, then
+push a `v*` tag; the release job signs the APK and attaches it. Without those
+secrets the tag still publishes, but the APK is unsigned and will not install.
 
 ---
 
