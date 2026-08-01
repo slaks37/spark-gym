@@ -25,8 +25,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.Image
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sparkgym.R
 import com.sparkgym.core.design.SparkColors
 import com.sparkgym.core.design.SystemChip
 import com.sparkgym.core.design.SystemLabel
@@ -71,12 +74,27 @@ private fun AchievementRow(achievement: Achievement) {
     val accent = if (achievement.unlocked) SparkColors.Amber else SparkColors.Divider
     SystemPanel(accent = accent, modifier = Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                if (achievement.unlocked) Icons.Filled.EmojiEvents else Icons.Filled.Lock,
-                contentDescription = null,
-                tint = if (achievement.unlocked) SparkColors.Amber else SparkColors.TextMuted,
-                modifier = Modifier.size(26.dp)
-            )
+            val iconRes = when (achievement.key) {
+                "first_workout" -> R.drawable.badge_first_workout
+                "streak_7" -> R.drawable.badge_streak_seven
+                "iron_lifter" -> R.drawable.badge_iron_lifter
+                "water_master" -> R.drawable.badge_water_master
+                else -> R.drawable.badge_first_workout // Fallback
+            }
+            if (achievement.unlocked) {
+                Image(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(36.dp)
+                )
+            } else {
+                Icon(
+                    Icons.Filled.Lock,
+                    contentDescription = null,
+                    tint = SparkColors.TextMuted,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(

@@ -31,7 +31,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sparkgym.R
 import com.sparkgym.core.design.SegmentedBar
 import com.sparkgym.core.design.SparkColors
 import com.sparkgym.core.design.SystemChip
@@ -55,13 +60,23 @@ fun CoachScreen(viewModel: CoachViewModel) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text("COACH", style = SystemLabel.copy(color = SparkColors.Cyan))
-                    Text(
-                        "Your data, read back to you",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = SparkColors.TextPrimary
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ai_coach_avatar),
+                        contentDescription = "AI Coach Avatar",
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
                     )
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("COACH", style = SystemLabel.copy(color = SparkColors.Cyan))
+                        Text(
+                            "Your data, read back to you",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = SparkColors.TextPrimary
+                        )
+                    }
                 }
                 IconButton(onClick = viewModel::refresh) {
                     Icon(Icons.Filled.Refresh, "Re-analyse", tint = SparkColors.TextSecondary)
