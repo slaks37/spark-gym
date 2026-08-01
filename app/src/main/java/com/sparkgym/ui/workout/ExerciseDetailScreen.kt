@@ -19,9 +19,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -50,8 +53,9 @@ fun ExerciseDetailScreen(
     val detail by container.workoutRepository.observeExercise(exerciseId)
         .collectAsState(initial = null)
 
-    val recent by produceState<List<SetLogEntity>>(initialValue = emptyList(), exerciseId) {
-        value = container.workoutRepository.lastPerformance(exerciseId)
+    var recent by remember { mutableStateOf<List<SetLogEntity>>(emptyList()) }
+    LaunchedEffect(exerciseId) {
+        recent = container.workoutRepository.lastPerformance(exerciseId)
     }
 
     val exercise = detail?.exercise
