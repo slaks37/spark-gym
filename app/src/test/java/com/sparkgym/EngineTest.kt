@@ -12,6 +12,7 @@ import com.sparkgym.domain.model.Muscle
 import com.sparkgym.domain.model.Rank
 import com.sparkgym.domain.model.TrackingType
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -251,6 +252,15 @@ class HeatmapEngineTest {
 
         val weakest = HeatmapEngine.weakestLinks(HeatmapEngine.build(sets), 2).map { it.muscle }
         assertEquals(listOf(Muscle.CALVES, Muscle.HAMSTRINGS), weakest)
+    }
+
+    @Test
+    fun `weakest links never nag about the neck`() {
+        // Nobody trains it deliberately, so it would permanently own the top slot.
+        val sets = Muscle.entries.associateWith { HeatmapEngine.targetFor(it) } +
+            mapOf(Muscle.NECK to 0.0)
+        val weakest = HeatmapEngine.weakestLinks(HeatmapEngine.build(sets), 5).map { it.muscle }
+        assertFalse(Muscle.NECK in weakest)
     }
 }
 
