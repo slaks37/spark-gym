@@ -52,6 +52,7 @@ import com.sparkgym.core.design.SystemPanel
 import com.sparkgym.core.util.compactVolume
 import com.sparkgym.domain.model.Attribute
 import com.sparkgym.domain.model.HunterProfile
+import com.sparkgym.ui.common.ProfileAvatar
 import com.sparkgym.ui.common.SystemMessageDialog
 import com.sparkgym.ui.heatmap.MuscleHeatMap
 import kotlin.math.cos
@@ -82,13 +83,28 @@ fun StatusScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text("STATUS", style = SystemLabel.copy(color = SparkColors.Cyan))
-                    Text(
-                        hunter?.name ?: "Hunter",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = SparkColors.TextPrimary
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ProfileAvatar(
+                        uri = state.profile.avatarUri,
+                        name = hunter?.name ?: state.profile.name,
+                        size = 46.dp,
+                        accent = hunter?.let { RankColor.valueOf(it.rank.name).color } ?: SparkColors.Cyan,
+                        onClick = onOpenProfile
                     )
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            hunter?.name ?: state.profile.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = SparkColors.TextPrimary
+                        )
+                        hunter?.let {
+                            Text(
+                                "${it.rank.label} · Lv ${it.level}",
+                                style = SystemLabel.copy(color = RankColor.valueOf(it.rank.name).color)
+                            )
+                        }
+                    }
                 }
                 Row {
                     IconButton(onClick = { viewModel.sync() }) {

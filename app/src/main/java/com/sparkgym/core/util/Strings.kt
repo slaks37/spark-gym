@@ -133,6 +133,21 @@ object S {
 
     @Composable
     @ReadOnlyComposable
+
+    // ── Exercise detail ──────────────────────────────────────────────
+    val primaryMuscles @Composable @ReadOnlyComposable get() = pick("Primary", "Otot utama")
+    val secondaryMuscles @Composable @ReadOnlyComposable get() = pick("Secondary", "Otot pendukung")
+    val howTo @Composable @ReadOnlyComposable get() = pick("How to do it", "Cara melakukan")
+    val recentSets @Composable @ReadOnlyComposable get() = pick("Your recent sets", "Set terakhirmu")
+    val musclesWorked @Composable @ReadOnlyComposable get() = pick("Muscles worked", "Otot yang dilatih")
+
+    // ── Profile & photo ──────────────────────────────────────────────
+    val profilePhoto @Composable @ReadOnlyComposable get() = pick("Profile photo", "Foto profil")
+    val changePhoto @Composable @ReadOnlyComposable get() = pick("Change photo", "Ganti foto")
+    val removePhoto @Composable @ReadOnlyComposable get() = pick("Remove", "Hapus")
+    val language @Composable @ReadOnlyComposable get() = pick("Language", "Bahasa")
+    val tapToAddPhoto @Composable @ReadOnlyComposable get() = pick("Tap to add a photo", "Ketuk untuk menambah foto")
+
     private fun pick(en: String, id: String): String = when (lang) {
         AppLanguage.EN -> en
         AppLanguage.ID -> id

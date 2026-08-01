@@ -1,5 +1,9 @@
 package com.sparkgym.ui.profile
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -30,7 +35,10 @@ import com.sparkgym.core.design.SparkColors
 import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.design.SystemPanel
+import androidx.compose.ui.platform.LocalContext
 import com.sparkgym.core.util.AppLanguage
+import com.sparkgym.core.util.S
+import com.sparkgym.ui.common.ProfileAvatar
 import com.sparkgym.domain.engine.EnergyMath
 import com.sparkgym.ui.common.SelectableChip
 import com.sparkgym.ui.common.SparkTextField
@@ -77,7 +85,56 @@ fun ProfileScreen(
         }
 
         item {
-            SystemPanel(title = "Language") {
+            val context = LocalContext.current
+            val picker = rememberLauncherForActivityResult(
+                ActivityResultContracts.PickVisualMedia()
+            ) { picked ->
+                if (picked != null) {
+                    // The photo picker grants read access for this URI only; take it
+                    // persistably or the avatar dies at the next process restart.
+                    runCatching {
+                        context.contentResolver.takePersistableUriPermission(
+                            picked, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        )
+                    }
+                    viewModel.setAvatar(picked.toString())
+                }
+            }
+
+            SystemPanel(title = S.profilePhoto) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ProfileAvatar(
+                        uri = profile.avatarUri,
+                        name = profile.name,
+                        size = 76.dp,
+                        onClick = {
+                            picker.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        }
+                    )
+                    Spacer(Modifier.width(16.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            if (profile.avatarUri == null) S.tapToAddPhoto else S.changePhoto,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = SparkColors.TextSecondary
+                        )
+                        if (profile.avatarUri != null) {
+                            Spacer(Modifier.height(8.dp))
+                            SystemButton(
+                                S.removePhoto,
+                                { viewModel.setAvatar(null) },
+                                accent = SparkColors.Danger
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            SystemPanel(title = S.language) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AppLanguage.entries.forEach { lang ->
                         SelectableChip(

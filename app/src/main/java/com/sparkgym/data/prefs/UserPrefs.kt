@@ -33,7 +33,9 @@ data class UserProfile(
     val activeRoutineId: Long? = null,
     val heatmapWindowDays: Int = 7,
     val wearableSource: String = WearableSource.NONE,
-    val language: AppLanguage = AppLanguage.EN
+    val language: AppLanguage = AppLanguage.EN,
+    /** content:// URI of the user's chosen photo, null when unset. */
+    val avatarUri: String? = null
 ) {
     val tdee: Double get() = EnergyMath.tdee(sex, weightKg, heightCm, age, activity)
 
@@ -71,6 +73,7 @@ class UserPrefs(private val context: Context) {
         val ACTIVE_ROUTINE = longPreferencesKey("active_routine")
         val HEATMAP_WINDOW = intPreferencesKey("heatmap_window")
         val WEARABLE = stringPreferencesKey("wearable_source")
+        val AVATAR = stringPreferencesKey("avatar_uri")
         val LAST_SYNC_DAY = longPreferencesKey("last_sync_day")
         val LANGUAGE = stringPreferencesKey("language")
     }
@@ -95,6 +98,7 @@ class UserPrefs(private val context: Context) {
         activeRoutineId = this[Keys.ACTIVE_ROUTINE],
         heatmapWindowDays = this[Keys.HEATMAP_WINDOW] ?: 7,
         wearableSource = this[Keys.WEARABLE] ?: WearableSource.NONE,
+        avatarUri = this[Keys.AVATAR],
         language = this[Keys.LANGUAGE]?.let { runCatching { AppLanguage.valueOf(it) }.getOrNull() } ?: AppLanguage.EN
     )
 
@@ -114,6 +118,7 @@ class UserPrefs(private val context: Context) {
             prefs[Keys.HEATMAP_WINDOW] = updated.heatmapWindowDays
             prefs[Keys.WEARABLE] = updated.wearableSource
             prefs[Keys.LANGUAGE] = updated.language.name
+            updated.avatarUri?.let { prefs[Keys.AVATAR] = it } ?: prefs.remove(Keys.AVATAR)
             updated.calorieOverride?.let { prefs[Keys.CAL_OVERRIDE] = it } ?: prefs.remove(Keys.CAL_OVERRIDE)
             updated.proteinOverride?.let { prefs[Keys.PROTEIN_OVERRIDE] = it } ?: prefs.remove(Keys.PROTEIN_OVERRIDE)
             updated.activeRoutineId?.let { prefs[Keys.ACTIVE_ROUTINE] = it } ?: prefs.remove(Keys.ACTIVE_ROUTINE)

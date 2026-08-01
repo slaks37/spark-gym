@@ -50,6 +50,11 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
+    /** Persists the picked photo. Null clears it back to initials. */
+    fun setAvatar(uri: String?) {
+        viewModelScope.launch { container.prefs.update { it.copy(avatarUri = uri) } }
+    }
+
     fun setCalorieOverride(calories: Int?) {
         viewModelScope.launch { container.prefs.update { it.copy(calorieOverride = calories) } }
     }

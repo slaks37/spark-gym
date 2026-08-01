@@ -7,7 +7,10 @@ import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Whatshot
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.sparkgym.core.util.S
 
 sealed class Destination(val route: String) {
     data object Status : Destination("status")
@@ -47,15 +50,26 @@ sealed class Destination(val route: String) {
 
 data class BottomTab(
     val destination: Destination,
-    val label: String,
     val icon: ImageVector
-)
+) {
+    /** Resolved per composition so flipping the language relabels the bar. */
+    val label: String
+        @Composable @ReadOnlyComposable get() = when (destination) {
+            Destination.Status -> S.status
+            Destination.Coach -> S.coach
+            Destination.Quests -> S.quests
+            Destination.Workout -> S.train
+            Destination.Heatmap -> S.body
+            Destination.Nutrition -> S.fuel
+            else -> ""
+        }
+}
 
 val bottomTabs = listOf(
-    BottomTab(Destination.Status, "Status", Icons.Filled.Person),
-    BottomTab(Destination.Coach, "Coach", Icons.Filled.Insights),
-    BottomTab(Destination.Quests, "Quests", Icons.Filled.LocalFireDepartment),
-    BottomTab(Destination.Workout, "Train", Icons.Filled.FitnessCenter),
-    BottomTab(Destination.Heatmap, "Body", Icons.Filled.Whatshot),
-    BottomTab(Destination.Nutrition, "Fuel", Icons.Filled.Restaurant)
+    BottomTab(Destination.Status, Icons.Filled.Person),
+    BottomTab(Destination.Coach, Icons.Filled.Insights),
+    BottomTab(Destination.Quests, Icons.Filled.LocalFireDepartment),
+    BottomTab(Destination.Workout, Icons.Filled.FitnessCenter),
+    BottomTab(Destination.Heatmap, Icons.Filled.Whatshot),
+    BottomTab(Destination.Nutrition, Icons.Filled.Restaurant)
 )

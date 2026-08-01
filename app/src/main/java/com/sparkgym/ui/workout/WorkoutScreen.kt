@@ -49,6 +49,7 @@ import com.sparkgym.core.util.S
 import com.sparkgym.domain.model.Equipment
 import com.sparkgym.domain.model.Muscle
 import com.sparkgym.ui.common.ChipRow
+import com.sparkgym.ui.common.ExerciseCard
 import com.sparkgym.ui.common.SelectableChip
 import com.sparkgym.ui.common.SparkTextField
 
@@ -247,37 +248,17 @@ private fun LibraryTab(viewModel: WorkoutViewModel, onOpenExercise: (Long) -> Un
             ) {
                 items(library, key = { it.exercise.id }) { item ->
                     val e = item.exercise
-                    SystemPanel(
-                        modifier = Modifier.fillMaxWidth().clickable { onOpenExercise(e.id) },
-                        contentPadding = PaddingValues(12.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    e.name,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = SparkColors.TextPrimary
-                                )
-                                Spacer(Modifier.height(4.dp))
-                                val primary = item.muscles
-                                    .filter { it.contribution >= 1f }
-                                    .mapNotNull { Muscle.fromKey(it.muscle)?.displayName }
-                                Text(
-                                    "${e.equipment.displayName} · ${primary.joinToString(", ")}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = SparkColors.TextMuted
-                                )
-                            }
-                            Icon(
-                                if (e.isFavorite) Icons.Filled.Star else Icons.Filled.StarBorder,
-                                contentDescription = "Favourite",
-                                tint = if (e.isFavorite) SparkColors.Amber else SparkColors.TextMuted,
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .clickable { viewModel.toggleFavorite(e.id, !e.isFavorite) }
-                            )
-                        }
-                    }
+                    ExerciseCard(
+                        name = e.name,
+                        equipment = e.equipment,
+                        primary = item.muscles.filter { it.contribution >= 1f }
+                            .mapNotNull { Muscle.fromKey(it.muscle) }.toSet(),
+                        secondary = item.muscles.filter { it.contribution < 1f }
+                            .mapNotNull { Muscle.fromKey(it.muscle) }.toSet(),
+                        isFavorite = e.isFavorite,
+                        onFavorite = { viewModel.toggleFavorite(e.id, !e.isFavorite) },
+                        onClick = { onOpenExercise(e.id) }
+                    )
                 }
             }
         }
