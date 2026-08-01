@@ -81,12 +81,12 @@ fun SystemPanel(
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        SparkColors.Panel.copy(alpha = 0.96f),
-                        SparkColors.VoidElevated.copy(alpha = 0.96f)
+                        SparkColors.Panel,
+                        SparkColors.PanelHigh.copy(alpha = 0.5f)
                     )
                 )
             )
-            .border(BorderStroke(1.dp, accent.copy(alpha = 0.45f)), shape)
+            .border(BorderStroke(1.dp, accent.copy(alpha = 0.25f)), shape)
             .padding(contentPadding)
     ) {
         if (title != null) {
@@ -122,7 +122,7 @@ fun SegmentedBar(
     modifier: Modifier = Modifier,
     segments: Int = 24,
     color: Color = SparkColors.Cyan,
-    trackColor: Color = SparkColors.Divider.copy(alpha = 0.5f),
+    trackColor: Color = SparkColors.Divider.copy(alpha = 0.35f),
     height: androidx.compose.ui.unit.Dp = 10.dp
 ) {
     val animated by animateFloatAsState(
@@ -144,7 +144,7 @@ fun SegmentedBar(
             )
             if (fill > 0f) {
                 drawRect(
-                    color = color.copy(alpha = 0.35f + 0.65f * fill),
+                    color = color.copy(alpha = 0.45f + 0.55f * fill),
                     topLeft = androidx.compose.ui.geometry.Offset(x, 0f),
                     size = Size(segW * fill, size.height)
                 )
@@ -198,7 +198,7 @@ fun SystemButton(
     Row(
         modifier = modifier
             .clip(shape)
-            .background(accent.copy(alpha = 0.14f * alpha))
+            .background(accent.copy(alpha = 0.10f * alpha))
             .border(BorderStroke(1.dp, accent.copy(alpha = 0.7f * alpha)), shape)
             .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 20.dp, vertical = 12.dp),
@@ -231,13 +231,13 @@ fun SystemChip(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(3.dp))
-            .background(if (filled) accent.copy(alpha = 0.9f) else accent.copy(alpha = 0.12f))
-            .border(1.dp, accent.copy(alpha = 0.6f), RoundedCornerShape(3.dp))
+            .background(if (filled) accent.copy(alpha = 0.9f) else accent.copy(alpha = 0.08f))
+            .border(1.dp, accent.copy(alpha = 0.4f), RoundedCornerShape(3.dp))
             .padding(horizontal = 8.dp, vertical = 3.dp)
     ) {
         Text(
             text.uppercase(),
-            color = if (filled) SparkColors.Void else accent,
+            color = if (filled) Color.White else accent,
             fontSize = 10.sp,
             letterSpacing = 1.2.sp,
             fontWeight = FontWeight.Bold,

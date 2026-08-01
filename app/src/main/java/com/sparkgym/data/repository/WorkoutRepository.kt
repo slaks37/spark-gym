@@ -67,6 +67,53 @@ class WorkoutRepository(private val db: SparkGymDatabase) {
 
     // -------------------------------------------------------------- routines
 
+    suspend fun createCustomRoutine(name: String, notes: String): Long {
+        return routineDao.insertRoutine(
+            com.sparkgym.data.local.RoutineEntity(
+                slug = "custom-${System.currentTimeMillis()}",
+                name = name,
+                description = notes,
+                goal = "CUSTOM",
+                daysPerWeek = 1,
+                level = "Custom",
+                homeFriendly = false,
+                isCustom = true
+            )
+        )
+    }
+
+    suspend fun addDayToRoutine(routineId: Long, name: String, dayIndex: Int): Long {
+        return routineDao.insertDay(
+            com.sparkgym.data.local.RoutineDayEntity(
+                routineId = routineId,
+                dayIndex = dayIndex,
+                name = name,
+                focus = "Custom"
+            )
+        )
+    }
+
+    suspend fun addExerciseToDay(dayId: Long, exerciseId: Long, orderIndex: Int, targetSets: Int) {
+        routineDao.insertPrescriptions(listOf(
+            com.sparkgym.data.local.RoutineExerciseEntity(
+                dayId = dayId,
+                exerciseId = exerciseId,
+                orderIndex = orderIndex,
+                targetSets = targetSets,
+                repsMin = 8,
+                repsMax = 12,
+                restSeconds = 90
+            )
+        ))
+    }
+
+    suspend fun deleteCustomRoutine(id: Long) {
+        val r = routineDao.observeRoutine(id).first()
+        if (r != null && r.routine.isCustom) {
+            routineDao.deleteRoutine(id)
+        }
+    }
+
     fun observeRoutines() = routineDao.observeRoutines()
 
     /** Everything except the bodyweight circuits, which get their own screen. */

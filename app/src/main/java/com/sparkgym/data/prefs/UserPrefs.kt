@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.sparkgym.core.util.AppLanguage
 import com.sparkgym.domain.engine.EnergyMath
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -31,7 +32,8 @@ data class UserProfile(
     val onboarded: Boolean = false,
     val activeRoutineId: Long? = null,
     val heatmapWindowDays: Int = 7,
-    val wearableSource: String = WearableSource.NONE
+    val wearableSource: String = WearableSource.NONE,
+    val language: AppLanguage = AppLanguage.EN
 ) {
     val tdee: Double get() = EnergyMath.tdee(sex, weightKg, heightCm, age, activity)
 
@@ -70,6 +72,7 @@ class UserPrefs(private val context: Context) {
         val HEATMAP_WINDOW = intPreferencesKey("heatmap_window")
         val WEARABLE = stringPreferencesKey("wearable_source")
         val LAST_SYNC_DAY = longPreferencesKey("last_sync_day")
+        val LANGUAGE = stringPreferencesKey("language")
     }
 
     val profile: Flow<UserProfile> = context.dataStore.data.map { it.toProfile() }
@@ -91,7 +94,8 @@ class UserPrefs(private val context: Context) {
         onboarded = this[Keys.ONBOARDED] ?: false,
         activeRoutineId = this[Keys.ACTIVE_ROUTINE],
         heatmapWindowDays = this[Keys.HEATMAP_WINDOW] ?: 7,
-        wearableSource = this[Keys.WEARABLE] ?: WearableSource.NONE
+        wearableSource = this[Keys.WEARABLE] ?: WearableSource.NONE,
+        language = this[Keys.LANGUAGE]?.let { runCatching { AppLanguage.valueOf(it) }.getOrNull() } ?: AppLanguage.EN
     )
 
     suspend fun update(transform: (UserProfile) -> UserProfile) {
@@ -109,6 +113,7 @@ class UserPrefs(private val context: Context) {
             prefs[Keys.ONBOARDED] = updated.onboarded
             prefs[Keys.HEATMAP_WINDOW] = updated.heatmapWindowDays
             prefs[Keys.WEARABLE] = updated.wearableSource
+            prefs[Keys.LANGUAGE] = updated.language.name
             updated.calorieOverride?.let { prefs[Keys.CAL_OVERRIDE] = it } ?: prefs.remove(Keys.CAL_OVERRIDE)
             updated.proteinOverride?.let { prefs[Keys.PROTEIN_OVERRIDE] = it } ?: prefs.remove(Keys.PROTEIN_OVERRIDE)
             updated.activeRoutineId?.let { prefs[Keys.ACTIVE_ROUTINE] = it } ?: prefs.remove(Keys.ACTIVE_ROUTINE)

@@ -85,7 +85,7 @@ fun MuscleHeatMap(
                     drawPath(pathObj, color = fill)
                     drawPath(
                         pathObj,
-                        color = if (isSelected) SparkColors.TextPrimary else SparkColors.Void.copy(alpha = 0.55f),
+                        color = if (isSelected) SparkColors.TextPrimary else SparkColors.Divider.copy(alpha = 0.7f),
                         style = Stroke(width = if (isSelected) 2.5f else 1f)
                     )
                     if (intensity > 1.15f) {

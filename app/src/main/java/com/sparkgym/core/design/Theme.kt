@@ -4,7 +4,7 @@ import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
@@ -17,15 +17,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
-private val SparkScheme = darkColorScheme(
+private val SparkScheme = lightColorScheme(
     primary = SparkColors.Cyan,
-    onPrimary = SparkColors.Void,
+    onPrimary = Color.White,
     primaryContainer = SparkColors.CyanDim,
     onPrimaryContainer = SparkColors.TextPrimary,
     secondary = SparkColors.Violet,
-    onSecondary = SparkColors.Void,
+    onSecondary = Color.White,
     tertiary = SparkColors.Amber,
-    onTertiary = SparkColors.Void,
+    onTertiary = Color.White,
     background = SparkColors.Void,
     onBackground = SparkColors.TextPrimary,
     surface = SparkColors.Panel,
@@ -34,7 +34,7 @@ private val SparkScheme = darkColorScheme(
     onSurfaceVariant = SparkColors.TextSecondary,
     outline = SparkColors.Divider,
     error = SparkColors.Danger,
-    onError = SparkColors.Void
+    onError = Color.White
 )
 
 /**
@@ -72,7 +72,6 @@ val SystemLabel = TextStyle(
 
 @Composable
 fun SparkGymTheme(
-    // The System window is always dark; the parameter exists so previews can opt out.
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
@@ -84,8 +83,9 @@ fun SparkGymTheme(
                 window.statusBarColor = Color.Transparent.toArgb()
                 window.navigationBarColor = Color.Transparent.toArgb()
                 WindowCompat.getInsetsController(window, view).apply {
-                    isAppearanceLightStatusBars = false
-                    isAppearanceLightNavigationBars = false
+                    // Light mode: dark icons on light background
+                    isAppearanceLightStatusBars = true
+                    isAppearanceLightNavigationBars = true
                 }
             }
         }

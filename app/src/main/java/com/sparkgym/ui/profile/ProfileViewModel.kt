@@ -2,6 +2,7 @@ package com.sparkgym.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sparkgym.core.util.AppLanguage
 import com.sparkgym.data.prefs.UserProfile
 import com.sparkgym.di.AppContainer
 import com.sparkgym.domain.engine.EnergyMath
@@ -63,5 +64,9 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
 
     fun setUseMetric(metric: Boolean) {
         viewModelScope.launch { container.prefs.update { it.copy(useMetric = metric) } }
+    }
+
+    fun setLanguage(language: AppLanguage) {
+        viewModelScope.launch { container.prefs.update { it.copy(language = language) } }
     }
 }

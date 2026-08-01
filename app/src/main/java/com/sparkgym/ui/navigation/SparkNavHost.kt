@@ -52,6 +52,7 @@ import com.sparkgym.ui.profile.ProfileScreen
 import com.sparkgym.ui.profile.ProfileViewModel
 import com.sparkgym.ui.quests.QuestScreen
 import com.sparkgym.ui.workout.ActiveSessionScreen
+import com.sparkgym.ui.workout.CreateRoutineScreen
 import com.sparkgym.ui.workout.ExerciseDetailScreen
 import com.sparkgym.ui.workout.RoutineDetailScreen
 import com.sparkgym.ui.workout.SessionViewModel
@@ -147,7 +148,17 @@ fun SparkNavHost(
                         onOpenSession = { id -> navController.navigate(Destination.Session.of(id)) },
                         onOpenRoutine = { id -> navController.navigate(Destination.RoutineDetail.of(id)) },
                         onOpenExercise = { id -> navController.navigate(Destination.ExerciseDetail.of(id)) },
-                        onOpenBodyweight = { navController.navigate(Destination.Bodyweight.route) }
+                        onOpenBodyweight = { navController.navigate(Destination.Bodyweight.route) },
+                        onOpenBuilder = { navController.navigate(Destination.CreateRoutine.route) }
+                    )
+                }
+
+                composable(Destination.CreateRoutine.route) {
+                    val vm: WorkoutViewModel = viewModel(factory = factory)
+                    CreateRoutineScreen(
+                        viewModel = vm,
+                        onBack = { navController.popBackStack() },
+                        onDone = { navController.popBackStack() }
                     )
                 }
 
@@ -254,7 +265,7 @@ fun SparkNavHost(
 @Composable
 private fun SystemNavBar(currentRoute: String?, onSelect: (Destination) -> Unit) {
     NavigationBar(
-        containerColor = SparkColors.VoidElevated,
+        containerColor = SparkColors.Panel,
         contentColor = SparkColors.TextSecondary
     ) {
         bottomTabs.forEach { tab ->
@@ -276,7 +287,7 @@ private fun SystemNavBar(currentRoute: String?, onSelect: (Destination) -> Unit)
                     selectedTextColor = SparkColors.Cyan,
                     unselectedIconColor = SparkColors.TextMuted,
                     unselectedTextColor = SparkColors.TextMuted,
-                    indicatorColor = SparkColors.Cyan.copy(alpha = 0.12f)
+                    indicatorColor = SparkColors.Cyan.copy(alpha = 0.10f)
                 )
             )
         }

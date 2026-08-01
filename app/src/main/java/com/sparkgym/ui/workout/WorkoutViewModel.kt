@@ -105,6 +105,43 @@ class WorkoutViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch { container.prefs.update { it.copy(activeRoutineId = id) } }
     }
 
+    // ------------------------------------------------------------- custom routine builder
+
+    data class CustomRoutineSpec(
+        val name: String,
+        val notes: String,
+        val days: List<CustomDaySpec>
+    )
+
+    data class CustomDaySpec(
+        val name: String,
+        val exercises: List<CustomExerciseSpec>
+    )
+
+    data class CustomExerciseSpec(
+        val exerciseId: Long,
+        val targetSets: Int
+    )
+
+    fun saveCustomRoutine(spec: CustomRoutineSpec, onDone: () -> Unit) {
+        viewModelScope.launch {
+            val routineId = container.workoutRepository.createCustomRoutine(spec.name, spec.notes)
+            spec.days.forEachIndexed { i, day ->
+                val dayId = container.workoutRepository.addDayToRoutine(routineId, day.name, i)
+                day.exercises.forEachIndexed { j, ex ->
+                    container.workoutRepository.addExerciseToDay(dayId, ex.exerciseId, j, ex.targetSets)
+                }
+            }
+            onDone()
+        }
+    }
+
+    fun deleteRoutine(id: Long) {
+        viewModelScope.launch {
+            container.workoutRepository.deleteCustomRoutine(id)
+        }
+    }
+
     // ------------------------------------------------------------- history
 
     val history: StateFlow<List<WorkoutSessionEntity>> =

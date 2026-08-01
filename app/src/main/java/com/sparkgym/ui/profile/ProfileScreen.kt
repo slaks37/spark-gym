@@ -30,6 +30,7 @@ import com.sparkgym.core.design.SparkColors
 import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.design.SystemPanel
+import com.sparkgym.core.util.AppLanguage
 import com.sparkgym.domain.engine.EnergyMath
 import com.sparkgym.ui.common.SelectableChip
 import com.sparkgym.ui.common.SparkTextField
@@ -71,6 +72,20 @@ fun ProfileScreen(
                         style = MaterialTheme.typography.titleMedium,
                         color = SparkColors.TextPrimary
                     )
+                }
+            }
+        }
+
+        item {
+            SystemPanel(title = "Language") {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AppLanguage.entries.forEach { lang ->
+                        SelectableChip(
+                            text = "${lang.flag}  ${lang.label}",
+                            selected = profile.language == lang,
+                            onClick = { viewModel.setLanguage(lang) }
+                        )
+                    }
                 }
             }
         }

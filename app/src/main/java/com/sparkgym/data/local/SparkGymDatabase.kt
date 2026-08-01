@@ -50,7 +50,8 @@ abstract class SparkGymDatabase : RoomDatabase() {
                     context.applicationContext,
                     SparkGymDatabase::class.java,
                     NAME
-                ).build().also { instance = it }
+                ).fallbackToDestructiveMigration()
+                    .build().also { instance = it }
             }
     }
 }

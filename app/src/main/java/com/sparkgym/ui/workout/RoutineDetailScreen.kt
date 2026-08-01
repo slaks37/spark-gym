@@ -103,6 +103,19 @@ fun RoutineDetailScreen(
                         { viewModel.setActiveRoutine(routineId) },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    
+                    if (it.isCustom) {
+                        Spacer(Modifier.height(10.dp))
+                        SystemButton(
+                            "Delete custom routine",
+                            { 
+                                viewModel.deleteRoutine(routineId)
+                                onBack() 
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            accent = SparkColors.Danger
+                        )
+                    }
                 }
             }
         }

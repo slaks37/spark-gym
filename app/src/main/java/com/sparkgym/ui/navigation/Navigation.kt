@@ -15,6 +15,7 @@ sealed class Destination(val route: String) {
     data object MealPlans : Destination("meal-plans")
     data object Quests : Destination("quests")
     data object Workout : Destination("workout")
+    data object CreateRoutine : Destination("create_routine")
     data object Bodyweight : Destination("bodyweight")
     data object Heatmap : Destination("heatmap")
     data object Nutrition : Destination("nutrition")

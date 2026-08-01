@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SelfImprovement
@@ -44,6 +45,7 @@ import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.design.SystemPanel
 import com.sparkgym.core.util.Dates
 import com.sparkgym.core.util.compactVolume
+import com.sparkgym.core.util.S
 import com.sparkgym.domain.model.Equipment
 import com.sparkgym.domain.model.Muscle
 import com.sparkgym.ui.common.ChipRow
@@ -56,7 +58,8 @@ fun WorkoutScreen(
     onOpenSession: (Long) -> Unit,
     onOpenRoutine: (Long) -> Unit,
     onOpenExercise: (Long) -> Unit,
-    onOpenBodyweight: () -> Unit
+    onOpenBodyweight: () -> Unit,
+    onOpenBuilder: () -> Unit
 ) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val activeSession by viewModel.activeSession.collectAsStateWithLifecycle()
@@ -71,21 +74,21 @@ fun WorkoutScreen(
 
     Column(Modifier.fillMaxSize().background(SparkColors.Void)) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-            Text("TRAINING", style = SystemLabel.copy(color = SparkColors.Cyan))
+            Text(S.training.uppercase(), style = SystemLabel.copy(color = SparkColors.Cyan))
             Spacer(Modifier.height(8.dp))
 
             activeSession?.let { session ->
                 SystemPanel(accent = SparkColors.Success, modifier = Modifier.fillMaxWidth()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("SESSION IN PROGRESS", style = SystemLabel.copy(color = SparkColors.Success))
+                            Text(S.sessionInProgress.uppercase(), style = SystemLabel.copy(color = SparkColors.Success))
                             Text(
                                 session.name,
                                 style = MaterialTheme.typography.titleMedium,
                                 color = SparkColors.TextPrimary
                             )
                         }
-                        SystemButton("Resume", { onOpenSession(session.id) }, accent = SparkColors.Success)
+                        SystemButton(S.resume, { onOpenSession(session.id) }, accent = SparkColors.Success)
                     }
                 }
                 Spacer(Modifier.height(10.dp))
@@ -105,9 +108,9 @@ fun WorkoutScreen(
                     )
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("BODYWEIGHT", style = SystemLabel.copy(color = SparkColors.Violet))
+                        Text(S.bodyweight.uppercase(), style = SystemLabel.copy(color = SparkColors.Violet))
                         Text(
-                            "No equipment, no gym — circuits for a small room",
+                            S.bodyweightDesc,
                             style = MaterialTheme.typography.bodySmall,
                             color = SparkColors.TextMuted
                         )
@@ -122,14 +125,14 @@ fun WorkoutScreen(
             Spacer(Modifier.height(10.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("Routines", "Library", "History").forEachIndexed { index, label ->
+                listOf(S.routines, S.library, S.history).forEachIndexed { index, label ->
                     SelectableChip(label, tab == index, { tab = index })
                 }
             }
         }
 
         when (tab) {
-            0 -> RoutinesTab(viewModel, onOpenRoutine) { viewModel.startEmptySession() }
+            0 -> RoutinesTab(viewModel, onOpenRoutine, onOpenBuilder) { viewModel.startEmptySession() }
             1 -> LibraryTab(viewModel, onOpenExercise)
             else -> HistoryTab(viewModel)
         }
@@ -140,6 +143,7 @@ fun WorkoutScreen(
 private fun RoutinesTab(
     viewModel: WorkoutViewModel,
     onOpenRoutine: (Long) -> Unit,
+    onOpenBuilder: () -> Unit,
     onStartEmpty: () -> Unit
 ) {
     val routines by viewModel.routines.collectAsStateWithLifecycle()
@@ -149,12 +153,21 @@ private fun RoutinesTab(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
-            SystemButton(
-                "Start empty session",
-                onStartEmpty,
-                icon = Icons.Filled.PlayArrow,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SystemButton(
+                    S.startEmptySession,
+                    onStartEmpty,
+                    icon = Icons.Filled.PlayArrow,
+                    modifier = Modifier.weight(1f)
+                )
+                SystemButton(
+                    S.createRoutine,
+                    onOpenBuilder,
+                    icon = Icons.Filled.Add,
+                    modifier = Modifier.weight(1f),
+                    accent = SparkColors.Violet
+                )
+            }
         }
 
         items(routines, key = { it.id }) { routine ->
@@ -177,10 +190,10 @@ private fun RoutinesTab(
                         )
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            SystemChip("${routine.daysPerWeek} days")
+                            SystemChip("${routine.daysPerWeek} ${S.days}")
                             SystemChip(routine.level, accent = SparkColors.Violet)
                             SystemChip(routine.goal, accent = SparkColors.Amber)
-                            if (routine.homeFriendly) SystemChip("home", accent = SparkColors.Success)
+                            if (routine.homeFriendly) SystemChip(S.home, accent = SparkColors.Success)
                         }
                     }
                 }
@@ -199,7 +212,7 @@ private fun LibraryTab(viewModel: WorkoutViewModel, onOpenExercise: (Long) -> Un
             SparkTextField(
                 value = filters.query,
                 onValueChange = viewModel::setQuery,
-                label = "Search exercises",
+                label = S.searchExercises,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(10.dp))
@@ -219,14 +232,14 @@ private fun LibraryTab(viewModel: WorkoutViewModel, onOpenExercise: (Long) -> Un
             )
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SelectableChip("Favourites", filters.favoritesOnly, viewModel::toggleFavoritesOnly, accent = SparkColors.Amber)
-                SelectableChip("Home only", filters.homeOnly, viewModel::toggleHomeOnly, accent = SparkColors.Success)
+                SelectableChip(S.favourites, filters.favoritesOnly, viewModel::toggleFavoritesOnly, accent = SparkColors.Amber)
+                SelectableChip(S.homeOnly, filters.homeOnly, viewModel::toggleHomeOnly, accent = SparkColors.Success)
             }
             Spacer(Modifier.height(10.dp))
         }
 
         if (library.isEmpty()) {
-            EmptyState("Nothing matches those filters.")
+            EmptyState(S.noMatchFilter)
         } else {
             LazyColumn(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
@@ -284,14 +297,14 @@ private fun HistoryTab(viewModel: WorkoutViewModel) {
     ) {
         if (trend.isNotEmpty()) {
             item {
-                SystemPanel(title = "Volume — last 30 days", accent = SparkColors.Violet) {
+                SystemPanel(title = S.volumeLast30, accent = SparkColors.Violet) {
                     VolumeBars(
                         values = trend.map { it.volumeKg },
                         modifier = Modifier.fillMaxWidth().height(110.dp)
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "${trend.sumOf { it.volumeKg }.compactVolume()} kg across ${trend.size} sessions",
+                        "${trend.sumOf { it.volumeKg }.compactVolume()} kg ${S.of} ${trend.size} ${S.sessions}",
                         style = SystemLabel,
                         color = SparkColors.TextMuted
                     )
@@ -301,7 +314,7 @@ private fun HistoryTab(viewModel: WorkoutViewModel) {
 
         if (prs.isNotEmpty()) {
             item {
-                SystemPanel(title = "Personal records", accent = SparkColors.Amber) {
+                SystemPanel(title = S.personalRecords, accent = SparkColors.Amber) {
                     prs.sortedByDescending { it.bestEstimated1RmKg }.take(6).forEach { pr ->
                         Row(
                             Modifier.fillMaxWidth().padding(vertical = 3.dp),
@@ -324,7 +337,7 @@ private fun HistoryTab(viewModel: WorkoutViewModel) {
         }
 
         if (history.isEmpty()) {
-            item { EmptyState("No sessions logged yet. Your history starts with the next one.") }
+            item { EmptyState(S.noHistoryYet) }
         }
 
         items(history, key = { it.id }) { session ->
@@ -345,7 +358,7 @@ private fun HistoryTab(viewModel: WorkoutViewModel) {
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            "${session.totalSets} sets",
+                            "${session.totalSets} ${S.sets}",
                             style = MaterialTheme.typography.bodySmall,
                             color = SparkColors.TextSecondary
                         )

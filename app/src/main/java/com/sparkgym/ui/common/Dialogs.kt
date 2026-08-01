@@ -113,8 +113,8 @@ fun SparkTextField(
             focusedTextColor = SparkColors.TextPrimary,
             unfocusedTextColor = SparkColors.TextPrimary,
             cursorColor = SparkColors.Cyan,
-            focusedContainerColor = SparkColors.VoidElevated,
-            unfocusedContainerColor = SparkColors.VoidElevated
+            focusedContainerColor = SparkColors.Panel,
+            unfocusedContainerColor = SparkColors.Panel
         )
     )
 }
@@ -146,9 +146,9 @@ fun NumberCell(
             unfocusedTextColor = SparkColors.TextPrimary,
             disabledTextColor = SparkColors.TextMuted,
             cursorColor = SparkColors.Cyan,
-            focusedContainerColor = SparkColors.VoidElevated,
-            unfocusedContainerColor = SparkColors.VoidElevated,
-            disabledContainerColor = SparkColors.VoidElevated
+            focusedContainerColor = SparkColors.Panel,
+            unfocusedContainerColor = SparkColors.Panel,
+            disabledContainerColor = SparkColors.PanelHigh
         )
     )
 }
@@ -173,7 +173,7 @@ fun SelectableChip(
     ) {
         Text(
             text.uppercase(),
-            color = if (selected) SparkColors.Void else SparkColors.TextSecondary,
+            color = if (selected) Color.White else SparkColors.TextSecondary,
             fontSize = 10.sp,
             letterSpacing = 1.sp,
             fontWeight = FontWeight.Bold,
