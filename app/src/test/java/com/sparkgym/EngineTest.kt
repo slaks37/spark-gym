@@ -244,16 +244,13 @@ class HeatmapEngineTest {
 
     @Test
     fun `weakest links surface the coldest muscles`() {
-        val heat = HeatmapEngine.build(
-            mapOf(
-                Muscle.CHEST to 20.0,
-                Muscle.QUADS to 18.0,
-                Muscle.CALVES to 0.0,
-                Muscle.HAMSTRINGS to 1.0
-            )
-        )
-        val weakest = HeatmapEngine.weakestLinks(heat, 2).map { it.muscle }
-        assertTrue(Muscle.CALVES in weakest)
+        // build() scores every muscle, not just the ones passed in, so a partial map
+        // would leave a dozen never-trained muscles tied at zero ahead of these two.
+        val sets = Muscle.entries.associateWith { HeatmapEngine.targetFor(it) } +
+            mapOf(Muscle.CALVES to 0.0, Muscle.HAMSTRINGS to 1.0)
+
+        val weakest = HeatmapEngine.weakestLinks(HeatmapEngine.build(sets), 2).map { it.muscle }
+        assertEquals(listOf(Muscle.CALVES, Muscle.HAMSTRINGS), weakest)
     }
 }
 

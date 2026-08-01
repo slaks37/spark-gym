@@ -64,12 +64,10 @@ class WearableRepository(
 
     suspend fun unlinkFitbit() {
         fitbitAuth.unlink()
-        prefs.update {
-            it.copy(
-                wearableSource = if (healthConnect.hasPermissions()) WearableSource.HEALTH_CONNECT
-                else WearableSource.NONE
-            )
-        }
+        // hasPermissions() suspends, so it cannot run inside the non-suspending update lambda.
+        val fallback = if (healthConnect.hasPermissions()) WearableSource.HEALTH_CONNECT
+        else WearableSource.NONE
+        prefs.update { it.copy(wearableSource = fallback) }
     }
 
     suspend fun useHealthConnect() {
