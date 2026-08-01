@@ -3,7 +3,8 @@
 [![Platform](https://img.shields.io/badge/platform-Android%208.0%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com)
 [![Language](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![UI](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
-[![Tests](https://img.shields.io/badge/tests-98%20passing-16A34A)](app/src/test/java/com/sparkgym)
+[![Licence](https://img.shields.io/badge/licence-MIT-0EA5E9)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-118%20passing-16A34A)](app/src/test/java/com/sparkgym)
 [![Exercises](https://img.shields.io/badge/exercises-239-E8A317)](app/src/main/java/com/sparkgym/data/seed)
 [![Programmes](https://img.shields.io/badge/programmes-14-0099CC)](app/src/main/java/com/sparkgym/data/seed/RoutineSeedPro.kt)
 [![Foods](https://img.shields.io/badge/foods-192-16A34A)](app/src/main/java/com/sparkgym/data/seed/FoodSeed.kt)
@@ -224,12 +225,13 @@ fast and stack traces readable. `AppContainer` holds lazy singletons;
 `sparkViewModelFactory` wires the ViewModels in a dozen lines.
 
 **All game, coaching and nutrition maths lives in `domain/engine`** as pure
-functions with no Android dependencies, which is why it is all unit-tested — 60+
+functions with no Android dependencies, which is why it is all unit-tested — 118
 tests covering the XP curve, quest scaling, heat map normalisation, progression,
-deload logic, coach rules, meal-plan scaling, and the integrity of the bundled
-content itself (every routine references a real exercise, every meal plan
-references a real food, every muscle has at least three exercises, and every
-food's macros reconcile with its calorie figure).
+deload logic, coach rules, meal-plan scaling, library search ranking, and the
+integrity of the bundled content itself (every routine references a real
+exercise, every meal plan references a real food, every muscle has at least ten
+exercises and a stretch to go with it, every food's macros reconcile with its
+calorie figure, and every muscle, group and meal is named in both languages).
 
 Room is the single source of truth; every screen observes `Flow`s, so a set logged
 in the workout screen updates the heat map, the quest board and the status window
@@ -294,6 +296,13 @@ account system. OAuth tokens are stored encrypted and excluded from backups.
 ---
 
 ## Licence and attribution
+
+Released under the [MIT Licence](LICENSE) — use it, fork it, ship it, sell it,
+just keep the copyright notice.
+
+The bundled content is part of that: the 239 exercises, 14 programmes, 192 foods,
+8 meal plans and 19 stretches are original write-ups, not scraped from another
+app or database, so they carry the same licence as the code.
 
 The Solo Leveling flavour (ranks, the status window, the daily quest and its
 penalty) is a homage to the series by Chugong. This is an independent project and
