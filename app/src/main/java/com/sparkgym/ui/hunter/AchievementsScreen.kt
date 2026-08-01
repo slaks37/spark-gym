@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sparkgym.R
@@ -74,13 +75,7 @@ private fun AchievementRow(achievement: Achievement) {
     val accent = if (achievement.unlocked) SparkColors.Amber else SparkColors.Divider
     SystemPanel(accent = accent, modifier = Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            val iconRes = when (achievement.key) {
-                "first_workout" -> R.drawable.badge_first_workout
-                "streak_7" -> R.drawable.badge_streak_seven
-                "iron_lifter" -> R.drawable.badge_iron_lifter
-                "water_master" -> R.drawable.badge_water_master
-                else -> R.drawable.badge_first_workout // Fallback
-            }
+            val iconRes = badgeFor(achievement.key)
             if (achievement.unlocked) {
                 Image(
                     painter = painterResource(id = iconRes),
@@ -119,4 +114,18 @@ private fun AchievementRow(achievement: Achievement) {
             SystemChip("+${achievement.xpReward}", accent = accent)
         }
     }
+}
+
+/**
+ * Badge art per achievement. The keys have to match AchievementCatalog exactly —
+ * an earlier version invented its own ("first_workout", "streak_7") and every
+ * achievement silently fell through to the same fallback image.
+ */
+@DrawableRes
+private fun badgeFor(key: String): Int = when (key) {
+    "first-blood", "ten-gates", "fifty-gates", "hundred-gates" -> R.drawable.badge_first_workout
+    "streak-7", "streak-30", "streak-100" -> R.drawable.badge_streak_seven
+    "tonnage-10k", "tonnage-100k", "tonnage-million", "record-breaker" -> R.drawable.badge_iron_lifter
+    "meal-planner", "nutritionist" -> R.drawable.badge_water_master
+    else -> R.drawable.badge_first_workout
 }
