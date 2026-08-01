@@ -7,7 +7,7 @@ import com.sparkgym.data.local.DiaryEntryEntity
 import com.sparkgym.data.local.FoodEntity
 import com.sparkgym.data.prefs.UserProfile
 import com.sparkgym.data.repository.MacroTotals
-import com.sparkgym.data.repository.Meal
+import com.sparkgym.domain.model.Meal
 import com.sparkgym.data.seed.MealPlanSeed
 import com.sparkgym.di.AppContainer
 import com.sparkgym.domain.engine.EnergyMath

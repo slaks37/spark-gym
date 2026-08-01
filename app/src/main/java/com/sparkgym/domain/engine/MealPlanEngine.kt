@@ -1,6 +1,6 @@
 package com.sparkgym.domain.engine
 
-import com.sparkgym.data.repository.Meal
+import com.sparkgym.domain.model.Meal
 import com.sparkgym.data.seed.SeedMealPlan
 import kotlin.math.roundToInt
 

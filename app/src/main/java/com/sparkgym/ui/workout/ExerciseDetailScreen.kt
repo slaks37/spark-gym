@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -93,7 +93,7 @@ fun ExerciseDetailScreen(
                     .background(accent.copy(alpha = 0.08f))
             ) {
                 IconButton(onClick = onBack, modifier = Modifier.padding(4.dp)) {
-                    Icon(Icons.Filled.ArrowBack, S.back, tint = SparkColors.TextPrimary)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, S.back, tint = SparkColors.TextPrimary)
                 }
                 MuscleThumb(
                     primary = primary,

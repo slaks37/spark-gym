@@ -1,6 +1,6 @@
 package com.sparkgym.data.seed
 
-import com.sparkgym.data.repository.Meal
+import com.sparkgym.domain.model.Meal
 
 /**
  * Full-day meal templates.

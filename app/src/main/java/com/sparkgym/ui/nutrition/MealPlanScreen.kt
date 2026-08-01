@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +30,7 @@ import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemChip
 import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.design.SystemPanel
+import com.sparkgym.core.util.S
 import com.sparkgym.data.seed.MealPlanSeed
 import kotlin.math.roundToInt
 
@@ -55,7 +56,7 @@ fun MealPlanScreen(
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowBack, "Back", tint = SparkColors.TextSecondary)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = SparkColors.TextSecondary)
                 }
                 Column {
                     Text("MEAL PLANS", style = SystemLabel.copy(color = SparkColors.Amber))
@@ -181,7 +182,7 @@ fun MealPlanScreen(
                                 color = SparkColors.TextPrimary
                             )
                             Text(
-                                "${slot.meal.displayName} · ${slot.timing}",
+                                "${S.meal(slot.meal)} · ${slot.timing}",
                                 style = SystemLabel,
                                 color = SparkColors.TextMuted
                             )

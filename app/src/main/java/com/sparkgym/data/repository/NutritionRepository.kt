@@ -8,21 +8,11 @@ import com.sparkgym.data.local.SparkGymDatabase
 import com.sparkgym.data.local.WaterLogEntity
 import com.sparkgym.data.seed.SeedMealPlan
 import com.sparkgym.domain.engine.MealPlanEngine
+import com.sparkgym.domain.model.Meal
 import com.sparkgym.data.remote.OffProduct
 import com.sparkgym.data.remote.OpenFoodFactsApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-
-enum class Meal(val displayName: String) {
-    BREAKFAST("Breakfast"),
-    LUNCH("Lunch"),
-    DINNER("Dinner"),
-    SNACK("Snacks");
-
-    companion object {
-        fun fromKey(key: String): Meal = entries.firstOrNull { it.name == key } ?: SNACK
-    }
-}
 
 data class MacroTotals(
     val calories: Double = 0.0,

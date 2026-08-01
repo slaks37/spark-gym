@@ -15,7 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -88,7 +88,7 @@ fun CreateRoutineScreen(
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowBack, S.back, tint = SparkColors.TextSecondary)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, S.back, tint = SparkColors.TextSecondary)
                 }
                 Column {
                     Text(S.createRoutine.uppercase(), style = SystemLabel.copy(color = SparkColors.Cyan))

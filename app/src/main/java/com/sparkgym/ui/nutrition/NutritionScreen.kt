@@ -21,7 +21,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocalDrink
-import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,7 +40,8 @@ import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.design.SystemPanel
 import com.sparkgym.core.util.Dates
-import com.sparkgym.data.repository.Meal
+import com.sparkgym.core.util.S
+import com.sparkgym.domain.model.Meal
 import kotlin.math.roundToInt
 
 @Composable
@@ -138,7 +139,7 @@ fun NutritionScreen(
             SystemButton(
                 "Meal plans",
                 onOpenMealPlans,
-                icon = Icons.Filled.MenuBook,
+                icon = Icons.AutoMirrored.Filled.MenuBook,
                 accent = SparkColors.Amber,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -181,7 +182,7 @@ fun NutritionScreen(
                     ) {
                         Column {
                             Text(
-                                meal.displayName,
+                                S.meal(meal),
                                 style = MaterialTheme.typography.titleSmall,
                                 color = SparkColors.TextPrimary
                             )

@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -37,8 +37,9 @@ import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemChip
 import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.design.SystemPanel
+import com.sparkgym.core.util.S
 import com.sparkgym.data.local.FoodEntity
-import com.sparkgym.data.repository.Meal
+import com.sparkgym.domain.model.Meal
 import com.sparkgym.ui.common.SelectableChip
 import com.sparkgym.ui.common.SparkTextField
 import kotlin.math.roundToInt
@@ -66,10 +67,10 @@ fun FoodSearchScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onDone) {
-                Icon(Icons.Filled.ArrowBack, "Back", tint = SparkColors.TextSecondary)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = SparkColors.TextSecondary)
             }
             Column {
-                Text("ADD TO ${meal.displayName.uppercase()}", style = SystemLabel.copy(color = SparkColors.Cyan))
+                Text("${S.addTo} ${S.meal(meal).uppercase()}", style = SystemLabel.copy(color = SparkColors.Cyan))
                 Text("Food search", style = MaterialTheme.typography.titleMedium, color = SparkColors.TextPrimary)
             }
         }

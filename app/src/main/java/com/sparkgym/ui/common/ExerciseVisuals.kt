@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Accessibility
-import androidx.compose.material.icons.filled.DirectionsRun
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Settings
@@ -48,7 +48,7 @@ fun equipmentIcon(equipment: Equipment): ImageVector = when (equipment) {
     Equipment.BARBELL, Equipment.EZ_BAR, Equipment.SMITH -> Icons.Filled.ViewWeek
     Equipment.DUMBBELL, Equipment.KETTLEBELL -> Icons.Filled.FitnessCenter
     Equipment.MACHINE, Equipment.CABLE -> Icons.Filled.Settings
-    Equipment.CARDIO -> Icons.Filled.DirectionsRun
+    Equipment.CARDIO -> Icons.AutoMirrored.Filled.DirectionsRun
     Equipment.BAND -> Icons.Filled.Link
     else -> Icons.Filled.Accessibility
 }

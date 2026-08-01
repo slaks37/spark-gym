@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Settings
@@ -131,7 +131,7 @@ fun StatusScreen(
                     value = state.today?.steps?.toString() ?: "—",
                     label = "Steps",
                     modifier = Modifier.weight(1f),
-                    icon = Icons.Filled.DirectionsWalk
+                    icon = Icons.AutoMirrored.Filled.DirectionsWalk
                 )
                 StatTile(
                     value = "${state.macros.calories.roundToInt()}",

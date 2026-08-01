@@ -3,6 +3,7 @@ package com.sparkgym.core.util
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import com.sparkgym.data.seed.SeedStretch
+import com.sparkgym.domain.model.Meal
 import com.sparkgym.domain.model.Muscle
 import com.sparkgym.domain.model.MuscleGroup
 
@@ -132,11 +133,6 @@ object S {
     val sessions @Composable @ReadOnlyComposable get() = pick("sessions", "sesi")
     val of @Composable @ReadOnlyComposable get() = pick("of", "dari")
 
-    // ── Helper ───────────────────────────────────────────────────────
-
-    @Composable
-    @ReadOnlyComposable
-
     // ── Exercise detail ──────────────────────────────────────────────
     val primaryMuscles @Composable @ReadOnlyComposable get() = pick("Primary", "Otot utama")
     val secondaryMuscles @Composable @ReadOnlyComposable get() = pick("Secondary", "Otot pendukung")
@@ -148,9 +144,7 @@ object S {
     val profilePhoto @Composable @ReadOnlyComposable get() = pick("Profile photo", "Foto profil")
     val changePhoto @Composable @ReadOnlyComposable get() = pick("Change photo", "Ganti foto")
     val removePhoto @Composable @ReadOnlyComposable get() = pick("Remove", "Hapus")
-    val language @Composable @ReadOnlyComposable get() = pick("Language", "Bahasa")
     val tapToAddPhoto @Composable @ReadOnlyComposable get() = pick("Tap to add a photo", "Ketuk untuk menambah foto")
-
 
     // ── Stretching ───────────────────────────────────────────────────
     val stretchAfter @Composable @ReadOnlyComposable get() = pick("Stretch after", "Peregangan setelah")
@@ -175,6 +169,7 @@ object S {
     val searchHint @Composable @ReadOnlyComposable get() =
         pick("Exercise, muscle or kit — try \"chest\"", "Latihan, otot atau alat — coba \"dada\"")
     val didYouMean @Composable @ReadOnlyComposable get() = pick("Filter by", "Saring menurut")
+    val addTo @Composable @ReadOnlyComposable get() = pick("ADD TO", "TAMBAH KE")
     val resultsFor @Composable @ReadOnlyComposable get() = pick("results", "hasil")
 
     /** Muscle and group names follow the selected language. */
@@ -184,6 +179,15 @@ object S {
     @Composable @ReadOnlyComposable
     fun muscleGroup(g: MuscleGroup): String = pick(g.displayName, g.nameId)
 
+    /** Meal-slot names, so the diary and the plans read in the chosen language. */
+    @Composable @ReadOnlyComposable
+    fun meal(m: Meal): String = pick(m.displayName, m.nameId)
+
+    // ── Helper ───────────────────────────────────────────────────────
+
+    /** Reads [lang] from the composition, so it is composable like its callers. */
+    @Composable
+    @ReadOnlyComposable
     private fun pick(en: String, id: String): String = when (lang) {
         AppLanguage.EN -> en
         AppLanguage.ID -> id

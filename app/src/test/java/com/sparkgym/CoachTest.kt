@@ -1,6 +1,6 @@
 package com.sparkgym
 
-import com.sparkgym.data.repository.Meal
+import com.sparkgym.domain.model.Meal
 import com.sparkgym.data.seed.ExerciseSeed
 import com.sparkgym.data.seed.FoodSeed
 import com.sparkgym.data.seed.MealPlanSeed
