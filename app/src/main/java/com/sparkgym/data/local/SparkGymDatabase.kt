@@ -28,7 +28,13 @@ import androidx.room.TypeConverters
         RoutineFolderEntity::class,
         ProgressPhotoEntity::class
     ],
-    version = 1,
+    // Bumped to 2 for routine_folders, progress_photos, and the superset / setType
+    // / notes / isPersonalRecord columns. Room keeps a hash of the schema and
+    // compares it on open: leaving the version at 1 after changing the shape makes
+    // it throw "Room cannot verify the data integrity" on the first launch after an
+    // upgrade. fallbackToDestructiveMigration does not cover that — it only runs
+    // when the version actually moves and no migration is supplied.
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

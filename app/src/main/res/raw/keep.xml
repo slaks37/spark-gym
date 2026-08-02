@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ExerciseDetailScreen picks its hero picture with
+  Resources.getIdentifier("ex_" + exercise name, ...), so no `ex_*` drawable has
+  a static R.drawable reference anywhere in the code.
+
+  The release build runs with shrinkResources = true. The shrinker does switch to
+  a defensive mode when it sees getIdentifier, but the name here is *built* at
+  runtime rather than appearing as a literal, so nothing guarantees a match.
+  Declaring the pattern makes it deterministic instead of relying on a heuristic,
+  and keeps working as more per-exercise pictures are added.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ex_*" />

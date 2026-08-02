@@ -1,10 +1,9 @@
 package com.sparkgym.ui.workout
 
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.provider.MediaStore
+import androidx.core.content.FileProvider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -31,7 +30,8 @@ import com.sparkgym.core.design.SparkColors
 import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemLabel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import java.io.OutputStream
+import java.io.File
+import java.io.FileOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -174,31 +174,32 @@ private fun StatBox(label: String, value: String, color: androidx.compose.ui.gra
     }
 }
 
+/**
+ * Shares the rendered summary through a FileProvider URI.
+ *
+ * The obvious route — inserting into MediaStore's public image collection —
+ * cannot be used here: RELATIVE_PATH only exists from API 29, and on API 26–28
+ * writing to the shared gallery needs WRITE_EXTERNAL_STORAGE. minSdk is 26, so
+ * that path throws on Android 8.0 through 9.0. Handing out a content:// URI from
+ * our own cache works identically on every supported release, needs no
+ * permission, and does not leave a copy in the user's gallery they did not ask
+ * for.
+ */
 private fun shareBitmap(context: Context, bitmap: Bitmap) {
-    val resolver = context.contentResolver
-    val contentValues = ContentValues().apply {
-        put(MediaStore.MediaColumns.DISPLAY_NAME, "workout_summary_${System.currentTimeMillis()}.jpg")
-        put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-        put(MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_PICTURES + "/SparkGym")
+    val dir = File(context.cacheDir, "shared").apply { mkdirs() }
+
+    // One fixed name: the cache should not grow by a file per share.
+    val file = File(dir, "workout_summary.jpg")
+    FileOutputStream(file).use { out ->
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
     }
 
-    val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-    if (uri != null) {
-        var stream: OutputStream? = null
-        try {
-            stream = resolver.openOutputStream(uri)
-            if (stream != null) {
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
-            }
-        } finally {
-            stream?.close()
-        }
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "image/jpeg"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        context.startActivity(Intent.createChooser(shareIntent, "Share Workout Summary"))
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "image/jpeg"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
+    context.startActivity(Intent.createChooser(shareIntent, "Share Workout Summary"))
 }

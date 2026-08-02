@@ -69,7 +69,7 @@ import com.sparkgym.data.prefs.UserProfile
 @Composable
 fun StatusScreen(
     viewModel: HunterViewModel,
-    profileFlow: kotlinx.coroutines.flow.Flow<UserProfile>?, 
+    profileFlow: kotlinx.coroutines.flow.Flow<UserProfile>,
     onOpenAchievements: () -> Unit,
     onOpenProfile: () -> Unit,
     onOpenConnect: () -> Unit,
@@ -79,7 +79,9 @@ fun StatusScreen(
     val advice by viewModel.advice.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val hunter = state.hunter
-    val userProfile by profileFlow?.collectAsStateWithLifecycle(initialValue = UserProfile()) ?: androidx.compose.runtime.mutableStateOf(UserProfile())
+    // Unconditional on purpose: a composable behind a `?.` is only called on some
+    // recompositions, which shifts every later slot and corrupts the composition.
+    val userProfile by profileFlow.collectAsStateWithLifecycle(initialValue = UserProfile())
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(SparkColors.Void),
