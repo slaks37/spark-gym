@@ -43,14 +43,19 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew assembleDebug --stacktrace
 
-      # Run R8 on every push. The release build is the one that ships, and the
-      # ProGuard rules it depends on are invisible to the debug build — a broken
-      # keep rule would otherwise surface for the first time on release day.
-      # Unsigned here on purpose: this proves minification and shrinking work,
-      # the signed artefact comes from the release job.
-      - name: Assemble release APK (R8 smoke test)
+      # Build the variant that actually ships, on every push, so it cannot be
+      # broken for the first time on release day. Unsigned here on purpose —
+      # the signed artefact comes from the release job with the real key.
+      #
+      # Note that minification is currently OFF for release (see
+      # app/build.gradle.kts), so this does not exercise R8 or proguard-rules.pro.
+      # Turning minify on is a runtime risk that a build alone cannot clear, so
+      # it needs testing on a device first.
+      - name: Assemble release APK
         run: ./gradlew assembleRelease --stacktrace
 
+      # Only produced when minification is enabled; kept so a crash report from
+      # a shipped build can be de-obfuscated if that day comes.
       - name: Upload R8 mapping
         if: always()
         uses: actions/upload-artifact@v4

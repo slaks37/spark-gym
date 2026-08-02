@@ -83,10 +83,14 @@ already covered by `.gitignore`. Then add four repository secrets under
 | `KEY_PASSWORD` | the key password |
 
 Now either push a `v1.0.0` tag, or run the **Build** workflow manually with
-*Also build a signed release APK* ticked. Both produce
-`spark-gym-release.apk` — signed, minified, and installable. The job verifies
-the signature before publishing, and fails outright if the secrets are missing
-rather than handing you an APK that dies with "app not installed".
+*Also build a signed release APK* ticked. Both produce `spark-gym-release.apk`,
+signed and installable. The job verifies the signature before publishing, and
+fails outright if the secrets are missing rather than handing you an APK that
+dies with "app not installed".
+
+The release build is **not minified** — see the comment in
+`app/build.gradle.kts` for why. That makes the APK larger than it needs to be,
+and it means the shipped bytecode is exactly what CI tested.
 
 **Bump `versionCode` in `app/build.gradle.kts` for every build you hand out.**
 Android refuses to install an APK whose `versionCode` is not higher than the one

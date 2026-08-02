@@ -48,6 +48,19 @@ android {
             isMinifyEnabled = false
         }
         release {
+            // Minification is off for the first release, deliberately.
+            //
+            // It was turned on originally, then turned off again while chasing
+            // an install failure. proguard-rules.pro is now correct — it keeps
+            // the @JavascriptInterface bridge the 3D heat map calls by name, and
+            // the enum constants Room and DataStore persist by name, both of
+            // which fail silently rather than crashing when R8 renames them.
+            //
+            // But a green build does not prove a minified app *runs*: only a
+            // device does, and there are no instrumented tests yet. Shipping the
+            // exact bytecode CI tested is worth more than a smaller APK. Turn
+            // these on together, and test the heat map tap and the exercise
+            // library on a real phone before shipping that build.
             isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
