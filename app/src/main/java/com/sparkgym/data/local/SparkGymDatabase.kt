@@ -55,11 +55,14 @@ abstract class SparkGymDatabase : RoomDatabase() {
 
         fun get(context: Context): SparkGymDatabase =
             instance ?: synchronized(this) {
+                // No destructive fallback. Losing the schema race is not worth
+                // deleting somebody's entire training history; if a migration
+                // is ever missing, failing loudly is the lesser harm.
                 instance ?: Room.databaseBuilder(
                     context.applicationContext,
                     SparkGymDatabase::class.java,
                     NAME
-                ).fallbackToDestructiveMigration()
+                ).addMigrations(*ALL_MIGRATIONS)
                     .build().also { instance = it }
             }
     }

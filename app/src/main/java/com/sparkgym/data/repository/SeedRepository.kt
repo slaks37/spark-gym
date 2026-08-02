@@ -84,44 +84,94 @@ class SeedRepository(private val db: SparkGymDatabase) {
         }
     }
 
+    /**
+     * Inserts new exercises and brings existing ones up to date.
+     *
+     * Keying off the slug and skipping anything already present is enough for a
+     * first install, but it means a shipped correction — a fixed instruction, a
+     * re-mapped muscle, an equipment type that was wrong — reaches new installs
+     * only, and everyone already using the app keeps the mistake forever.
+     *
+     * So rows are updated in place rather than skipped. Two things are never
+     * touched: the row id, because routines, set logs and the muscle join all
+     * reference it, and `isFavorite`, which belongs to the user rather than the
+     * catalogue. Exercises the user created themselves are left alone entirely.
+     *
+     * The muscle join is rewritten only when it actually differs, so a routine
+     * upgrade does not churn every row on every launch.
+     */
     private suspend fun seedExercises() {
         val dao = db.exerciseDao()
 
-        // ExerciseSeed.exercises already folds in the advanced and bodyweight
-        // lists, so this is the whole library — with kit and without.
-        val existing = ExerciseSeed.exercises.associateWith { dao.bySlug(it.slug) }
+        for (seed in ExerciseSeed.exercises) {
+            val existing = dao.bySlug(seed.slug)
 
-        val missing = existing.filterValues { it == null }.keys
-        if (missing.isEmpty()) return
-
-        for (seed in missing) {
-            val id = dao.insert(
-                ExerciseEntity(
-                    slug = seed.slug,
-                    name = seed.name,
-                    equipment = seed.equipment,
-                    force = seed.force,
-                    difficulty = seed.difficulty,
-                    tracking = seed.tracking,
-                    instructions = seed.instructions,
-                    mediaQuery = "${seed.name} proper form",
-                    imageUri = seed.imageUri
+            if (existing == null) {
+                val id = dao.insert(
+                    ExerciseEntity(
+                        slug = seed.slug,
+                        name = seed.name,
+                        equipment = seed.equipment,
+                        force = seed.force,
+                        difficulty = seed.difficulty,
+                        tracking = seed.tracking,
+                        instructions = seed.instructions,
+                        mediaQuery = "${seed.name} proper form",
+                        imageUri = seed.imageUri
+                    )
                 )
+                dao.insertMuscles(muscleLinks(id, seed))
+                continue
+            }
+
+            // Somebody's own exercise that happens to share a slug is theirs.
+            if (existing.isCustom) continue
+
+            val updated = existing.copy(
+                name = seed.name,
+                equipment = seed.equipment,
+                force = seed.force,
+                difficulty = seed.difficulty,
+                tracking = seed.tracking,
+                instructions = seed.instructions,
+                mediaQuery = "${seed.name} proper form",
+                imageUri = seed.imageUri
             )
-            val links = seed.primary.map { ExerciseMuscleEntity(id, it.name, PRIMARY_CONTRIBUTION) } +
-                seed.secondary
-                    .filterNot { it in seed.primary }
-                    .map { ExerciseMuscleEntity(id, it.name, SECONDARY_CONTRIBUTION) }
-            dao.insertMuscles(links)
+            if (updated != existing) dao.update(updated)
+
+            val wanted = muscleLinks(existing.id, seed)
+            val current = dao.muscleLinksFor(existing.id)
+            if (current.toSet() != wanted.toSet()) {
+                dao.clearMuscles(existing.id)
+                dao.insertMuscles(wanted)
+            }
         }
     }
 
+    private fun muscleLinks(exerciseId: Long, seed: com.sparkgym.data.seed.SeedExercise) =
+        seed.primary.map { ExerciseMuscleEntity(exerciseId, it.name, PRIMARY_CONTRIBUTION) } +
+            seed.secondary
+                .filterNot { it in seed.primary }
+                .map { ExerciseMuscleEntity(exerciseId, it.name, SECONDARY_CONTRIBUTION) }
+
+    /**
+     * Adds routines that are not there yet, and leaves the rest alone.
+     *
+     * The old guard — bail out if the table has any rows at all — meant a
+     * programme shipped in a later version reached first installs only. Keying
+     * on slug instead lets new programmes arrive for everyone.
+     *
+     * Existing routines are deliberately not rewritten: the user may have made
+     * one their active programme or reordered a day, and silently replacing
+     * that on launch is worse than a stale description.
+     */
     private suspend fun seedRoutines() {
         val routineDao = db.routineDao()
         val exerciseDao = db.exerciseDao()
-        if (routineDao.count() > 0) return
 
         for (seed in RoutineSeed.routines) {
+            if (routineDao.routineBySlug(seed.slug) != null) continue
+
             val routineId = routineDao.insertRoutine(
                 RoutineEntity(
                     slug = seed.slug,
@@ -160,11 +210,13 @@ class SeedRepository(private val db: SparkGymDatabase) {
         }
     }
 
+    /** Adds foods missing from the table; a user's own entries are untouched. */
     private suspend fun seedFoods() {
         val dao = db.nutritionDao()
-        if (dao.foodCount() > 0) return
+        val missing = FoodSeed.foods.filter { dao.foodBySlug(it.slug) == null }
+        if (missing.isEmpty()) return
         dao.insertFoods(
-            FoodSeed.foods.map { seed ->
+            missing.map { seed ->
                 FoodEntity(
                     slug = seed.slug,
                     name = seed.name,

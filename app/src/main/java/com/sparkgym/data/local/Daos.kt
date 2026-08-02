@@ -62,6 +62,13 @@ interface ExerciseDao {
     @Query("SELECT muscle FROM exercise_muscles WHERE exerciseId = :exerciseId")
     suspend fun musclesFor(exerciseId: Long): List<String>
 
+    @Query("SELECT * FROM exercise_muscles WHERE exerciseId = :exerciseId")
+    suspend fun muscleLinksFor(exerciseId: Long): List<ExerciseMuscleEntity>
+
+    /** Clears the join before rewriting it, so a re-mapped muscle is removed. */
+    @Query("DELETE FROM exercise_muscles WHERE exerciseId = :exerciseId")
+    suspend fun clearMuscles(exerciseId: Long)
+
     @Query("DELETE FROM exercises WHERE id = :id AND isCustom = 1")
     suspend fun deleteCustom(id: Long)
 }
