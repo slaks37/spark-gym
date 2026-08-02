@@ -1,9 +1,7 @@
 package com.sparkgym.ui.common
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,7 +26,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -36,9 +33,15 @@ import androidx.compose.ui.unit.sp
 import com.sparkgym.core.design.SparkColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 
 /**
  * The user's photo, or their initials when they have not set one.
+ *
+ * Takes a **file path** inside app storage, not a content:// URI. The picker
+ * copies the chosen image in and downscales it (see [com.sparkgym.core.util.ImageUtils]),
+ * which survives the gallery permission being revoked and the original photo
+ * being deleted — a content URI survives neither.
  *
  * Decoding is done by hand rather than pulling in an image-loading library:
  * one avatar, one bitmap, and doing it here means the downsampling is explicit.
@@ -47,20 +50,19 @@ import kotlinx.coroutines.withContext
  */
 @Composable
 fun ProfileAvatar(
-    uri: String?,
+    path: String?,
     name: String,
     size: Dp,
     modifier: Modifier = Modifier,
     accent: Color = SparkColors.Cyan,
     onClick: (() -> Unit)? = null
 ) {
-    val context = LocalContext.current
     val density = androidx.compose.ui.platform.LocalDensity.current
     val targetPx = with(density) { size.roundToPx() }.coerceAtLeast(64)
 
-    var bitmap by remember(uri, targetPx) { mutableStateOf<Bitmap?>(null) }
-    LaunchedEffect(uri, targetPx) {
-        bitmap = uri?.let { withContext(Dispatchers.IO) { decodeScaled(context, it, targetPx) } }
+    var bitmap by remember(path, targetPx) { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(path, targetPx) {
+        bitmap = path?.let { withContext(Dispatchers.IO) { decodeScaled(it, targetPx) } }
     }
 
     val shape = CircleShape
@@ -122,15 +124,15 @@ fun ProfileAvatar(
 
 /**
  * Decodes at the smallest power-of-two subsample that still covers [targetPx].
- * Returns null on anything unreadable — a revoked permission, a deleted file —
- * so the caller silently falls back to initials rather than crashing.
+ * Returns null on anything unreadable — a deleted file, a partial write — so
+ * the caller silently falls back to initials rather than crashing.
  */
-private fun decodeScaled(context: Context, uriString: String, targetPx: Int): Bitmap? = runCatching {
-    val uri = Uri.parse(uriString)
-    val resolver = context.contentResolver
+private fun decodeScaled(path: String, targetPx: Int): Bitmap? = runCatching {
+    val file = File(path)
+    if (!file.exists()) return null
 
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+    BitmapFactory.decodeFile(path, bounds)
     if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
 
     var sample = 1
@@ -138,9 +140,8 @@ private fun decodeScaled(context: Context, uriString: String, targetPx: Int): Bi
         sample *= 2
     }
 
-    val opts = BitmapFactory.Options().apply {
+    BitmapFactory.decodeFile(path, BitmapFactory.Options().apply {
         inSampleSize = sample
         inPreferredConfig = Bitmap.Config.ARGB_8888
-    }
-    resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opts) }
+    })
 }.getOrNull()

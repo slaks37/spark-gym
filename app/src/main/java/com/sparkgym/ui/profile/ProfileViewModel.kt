@@ -53,11 +53,6 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
         }
     }
 
-    /** Persists the picked photo. Null clears it back to initials. */
-    fun setAvatarUri(uri: String?) {
-        viewModelScope.launch { container.prefs.update { it.copy(avatarUri = uri) } }
-    }
-
     fun setCalorieOverride(calories: Int?) {
         viewModelScope.launch { container.prefs.update { it.copy(calorieOverride = calories) } }
     }
@@ -78,6 +73,7 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch { container.prefs.update { it.copy(language = language) } }
     }
 
+    /** Persists the copied-in photo. Null clears it back to initials. */
     fun setAvatarPath(path: String?) {
         viewModelScope.launch { container.prefs.update { it.copy(avatarPath = path) } }
     }

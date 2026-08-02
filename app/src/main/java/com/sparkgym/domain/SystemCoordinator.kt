@@ -32,6 +32,17 @@ class SystemCoordinator(
 ) {
 
     /** Called on app start and at midnight rollover. */
+    /**
+     * Distinct days with food logged, over a window wide enough for the
+     * 30-day nutrition badge. This used to be hardcoded to zero at both call
+     * sites, so "meal-planner" and "nutritionist" could never unlock however
+     * diligently anyone logged.
+     */
+    private suspend fun loggedFoodDays(): Int {
+        val today = Dates.today()
+        return nutrition.loggedDayCount(today - 365, today)
+    }
+
     suspend fun refreshDailyBoard() {
         val profile = prefs.profile.first()
         val hunter = game.observeProfile().first()
@@ -96,14 +107,25 @@ class SystemCoordinator(
             totalVolumeKg = history.sumOf { it.totalVolumeKg },
             streak = workouts.trainingStreak(),
             prCount = workouts.observePersonalRecords().first().size,
-            loggedFoodDays = 0
+            loggedFoodDays = loggedFoodDays()
         )
     }
 
-    suspend fun onFoodLogged() {
+    suspend fun onFoodLogged(): List<String> {
         val today = Dates.today()
         game.setQuestProgress(QuestMetric.PROTEIN_G, nutrition.proteinOn(today), today)
         game.setQuestProgress(QuestMetric.CALORIES_LOGGED, nutrition.entryCountOn(today).toDouble(), today)
+
+        // The nutrition badges are earned by logging, so this is the only place
+        // they can ever be checked — finishing a workout will not do it.
+        val history = workouts.observeHistory().first()
+        return game.evaluateAchievements(
+            completedWorkouts = workouts.observeCompletedCount().first(),
+            totalVolumeKg = history.sumOf { it.totalVolumeKg },
+            streak = workouts.trainingStreak(),
+            prCount = workouts.observePersonalRecords().first().size,
+            loggedFoodDays = loggedFoodDays()
+        )
     }
 
     suspend fun onWaterLogged() {
@@ -149,7 +171,7 @@ class SystemCoordinator(
             totalVolumeKg = history.sumOf { it.totalVolumeKg },
             streak = workouts.trainingStreak(),
             prCount = workouts.observePersonalRecords().first().size,
-            loggedFoodDays = 0
+            loggedFoodDays = loggedFoodDays()
         )
 
         recalculateAttributes()

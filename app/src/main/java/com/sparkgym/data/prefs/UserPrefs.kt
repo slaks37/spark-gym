@@ -34,8 +34,13 @@ data class UserProfile(
     val heatmapWindowDays: Int = 7,
     val wearableSource: String = WearableSource.NONE,
     val language: AppLanguage = AppLanguage.EN,
-    /** content:// URI of the user's chosen photo, null when unset. */
-    val avatarUri: String? = null,
+    /**
+     * Absolute path to the user's photo inside app storage, null when unset.
+     *
+     * A copy rather than the content:// URI it came from: the URI grant can be
+     * revoked and the original can be deleted from the gallery, and either
+     * leaves the profile with a broken picture it cannot re-read.
+     */
     val avatarPath: String? = null
 ) {
     val tdee: Double get() = EnergyMath.tdee(sex, weightKg, heightCm, age, activity)
@@ -74,7 +79,6 @@ class UserPrefs(private val context: Context) {
         val ACTIVE_ROUTINE = longPreferencesKey("active_routine")
         val HEATMAP_WINDOW = intPreferencesKey("heatmap_window")
         val WEARABLE = stringPreferencesKey("wearable_source")
-        val AVATAR = stringPreferencesKey("avatar_uri")
         val LAST_SYNC_DAY = longPreferencesKey("last_sync_day")
         val LANGUAGE = stringPreferencesKey("language")
         val AVATAR_PATH = stringPreferencesKey("avatar_path")
@@ -100,7 +104,6 @@ class UserPrefs(private val context: Context) {
         activeRoutineId = this[Keys.ACTIVE_ROUTINE],
         heatmapWindowDays = this[Keys.HEATMAP_WINDOW] ?: 7,
         wearableSource = this[Keys.WEARABLE] ?: WearableSource.NONE,
-        avatarUri = this[Keys.AVATAR],
         language = this[Keys.LANGUAGE]?.let { runCatching { AppLanguage.valueOf(it) }.getOrNull() } ?: AppLanguage.EN,
         avatarPath = this[Keys.AVATAR_PATH]
     )
@@ -121,7 +124,6 @@ class UserPrefs(private val context: Context) {
             prefs[Keys.HEATMAP_WINDOW] = updated.heatmapWindowDays
             prefs[Keys.WEARABLE] = updated.wearableSource
             prefs[Keys.LANGUAGE] = updated.language.name
-            updated.avatarUri?.let { prefs[Keys.AVATAR] = it } ?: prefs.remove(Keys.AVATAR)
             updated.calorieOverride?.let { prefs[Keys.CAL_OVERRIDE] = it } ?: prefs.remove(Keys.CAL_OVERRIDE)
             updated.proteinOverride?.let { prefs[Keys.PROTEIN_OVERRIDE] = it } ?: prefs.remove(Keys.PROTEIN_OVERRIDE)
             updated.activeRoutineId?.let { prefs[Keys.ACTIVE_ROUTINE] = it } ?: prefs.remove(Keys.ACTIVE_ROUTINE)

@@ -96,7 +96,7 @@ fun StatusScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     ProfileAvatar(
-                        uri = state.profile.avatarUri,
+                        path = state.profile.avatarPath,
                         name = hunter?.name ?: state.profile.name,
                         size = 46.dp,
                         accent = hunter?.let { RankColor.valueOf(it.rank.name).color } ?: SparkColors.Cyan,
@@ -272,38 +272,12 @@ private fun LevelPanel(hunter: HunterProfile, userProfile: UserProfile) {
     val rankColor = RankColor.valueOf(hunter.rank.name).color
     SystemPanel(accent = rankColor) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            val avatarPath = userProfile.avatarPath
-            if (avatarPath != null && File(avatarPath).exists()) {
-                val bitmap = BitmapFactory.decodeFile(avatarPath)
-                if (bitmap != null) {
-                    androidx.compose.foundation.Image(
-                        bitmap = bitmap.asImageBitmap(),
-                        contentDescription = "Avatar",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(62.dp)
-                            .clip(CircleShape)
-                    )
-                }
-            } else {
-                Box(
-                    Modifier
-                        .size(62.dp)
-                        .background(rankColor.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            hunter.rank.label,
-                            color = rankColor,
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.headlineMedium
-                        )
-                        Text("RANK", style = SystemLabel.copy(color = rankColor, fontSize = 8.sp))
-                    }
-                }
-            }
+            ProfileAvatar(
+                path = userProfile.avatarPath,
+                name = hunter.name,
+                size = 62.dp,
+                accent = rankColor
+            )
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

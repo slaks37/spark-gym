@@ -80,13 +80,13 @@ fun ProfileScreen(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val pickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+    // One picker for the whole screen. There used to be two, writing to two
+    // different preference keys, so Remove cleared one while the avatar on
+    // screen read the other and nothing appeared to happen.
+    val avatarPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             scope.launch {
-                val path = ImageUtils.saveAvatar(context, uri)
-                if (path != null) {
-                    viewModel.setAvatarPath(path)
-                }
+                ImageUtils.saveAvatar(context, uri)?.let(viewModel::setAvatarPath)
             }
         }
     }
@@ -115,30 +115,14 @@ fun ProfileScreen(
         }
 
         item {
-            val context = LocalContext.current
-            val picker = rememberLauncherForActivityResult(
-                ActivityResultContracts.PickVisualMedia()
-            ) { picked ->
-                if (picked != null) {
-                    // The photo picker grants read access for this URI only; take it
-                    // persistably or the avatar dies at the next process restart.
-                    runCatching {
-                        context.contentResolver.takePersistableUriPermission(
-                            picked, Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        )
-                    }
-                    viewModel.setAvatarUri(picked.toString())
-                }
-            }
-
             SystemPanel(title = S.profilePhoto) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     ProfileAvatar(
-                        uri = profile.avatarUri,
+                        path = profile.avatarPath,
                         name = profile.name,
                         size = 76.dp,
                         onClick = {
-                            picker.launch(
+                            avatarPicker.launch(
                                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                             )
                         }
@@ -146,11 +130,11 @@ fun ProfileScreen(
                     Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
-                            if (profile.avatarUri == null) S.tapToAddPhoto else S.changePhoto,
+                            if (profile.avatarPath == null) S.tapToAddPhoto else S.changePhoto,
                             style = MaterialTheme.typography.bodyMedium,
                             color = SparkColors.TextSecondary
                         )
-                        if (profile.avatarUri != null) {
+                        if (profile.avatarPath != null) {
                             Spacer(Modifier.height(8.dp))
                             SystemButton(
                                 S.removePhoto,
@@ -180,36 +164,9 @@ fun ProfileScreen(
         item {
             SystemPanel(title = "You") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(CircleShape)
-                            .background(SparkColors.PanelHigh)
-                            .clickable {
-                                pickerLauncher.launch(
-                                    androidx.activity.result.PickVisualMediaRequest(
-                                        ActivityResultContracts.PickVisualMedia.ImageOnly
-                                    )
-                                )
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        val avatarPath = profile.avatarPath
-                        if (avatarPath != null && File(avatarPath).exists()) {
-                            val bitmap = BitmapFactory.decodeFile(avatarPath)
-                            if (bitmap != null) {
-                                androidx.compose.foundation.Image(
-                                    bitmap = bitmap.asImageBitmap(),
-                                    contentDescription = "Avatar",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-                        } else {
-                            Icon(Icons.Filled.Add, "Change Avatar", tint = SparkColors.TextMuted)
-                        }
-                    }
-                    Spacer(Modifier.width(16.dp))
+                    // The photo lives in its own panel above; decoding it a
+                    // second time here ran BitmapFactory on the main thread on
+                    // every recomposition.
                     SparkTextField(name, { name = it }, "Hunter name", Modifier.weight(1f))
                 }
                 
