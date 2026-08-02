@@ -43,6 +43,22 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew assembleDebug --stacktrace
 
+      # Run R8 on every push. The release build is the one that ships, and the
+      # ProGuard rules it depends on are invisible to the debug build — a broken
+      # keep rule would otherwise surface for the first time on release day.
+      # Unsigned here on purpose: this proves minification and shrinking work,
+      # the signed artefact comes from the release job.
+      - name: Assemble release APK (R8 smoke test)
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Upload R8 mapping
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r8-mapping
+          path: app/build/outputs/mapping/release/
+          if-no-files-found: ignore
+
       # The debug APK is signed with the standard debug key, so it installs on a
       # phone straight from the artifact — no keystore or Play account needed.
       - name: Upload APK
