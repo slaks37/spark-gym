@@ -39,8 +39,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import android.graphics.BitmapFactory
 import java.io.File
 import kotlinx.coroutines.launch
@@ -86,7 +84,7 @@ fun ProfileScreen(
             scope.launch {
                 val path = ImageUtils.saveAvatar(context, uri)
                 if (path != null) {
-                    viewModel.setAvatar(path)
+                    viewModel.setAvatarPath(path)
                 }
             }
         }
@@ -128,7 +126,7 @@ fun ProfileScreen(
                             picked, Intent.FLAG_GRANT_READ_URI_PERMISSION
                         )
                     }
-                    viewModel.setAvatar(picked.toString())
+                    viewModel.setAvatarUri(picked.toString())
                 }
             }
 
@@ -155,7 +153,7 @@ fun ProfileScreen(
                             Spacer(Modifier.height(8.dp))
                             SystemButton(
                                 S.removePhoto,
-                                { viewModel.setAvatar(null) },
+                                { viewModel.setAvatarPath(null) },
                                 accent = SparkColors.Danger
                             )
                         }

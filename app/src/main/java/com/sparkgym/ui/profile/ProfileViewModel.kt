@@ -54,7 +54,7 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
     }
 
     /** Persists the picked photo. Null clears it back to initials. */
-    fun setAvatar(uri: String?) {
+    fun setAvatarUri(uri: String?) {
         viewModelScope.launch { container.prefs.update { it.copy(avatarUri = uri) } }
     }
 
@@ -78,7 +78,7 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
         viewModelScope.launch { container.prefs.update { it.copy(language = language) } }
     }
 
-    fun setAvatar(path: String?) {
+    fun setAvatarPath(path: String?) {
         viewModelScope.launch { container.prefs.update { it.copy(avatarPath = path) } }
     }
 

@@ -77,7 +77,7 @@ class UserPrefs(private val context: Context) {
         val AVATAR = stringPreferencesKey("avatar_uri")
         val LAST_SYNC_DAY = longPreferencesKey("last_sync_day")
         val LANGUAGE = stringPreferencesKey("language")
-        val AVATAR = stringPreferencesKey("avatar_path")
+        val AVATAR_PATH = stringPreferencesKey("avatar_path")
     }
 
     val profile: Flow<UserProfile> = context.dataStore.data.map { it.toProfile() }
@@ -102,7 +102,7 @@ class UserPrefs(private val context: Context) {
         wearableSource = this[Keys.WEARABLE] ?: WearableSource.NONE,
         avatarUri = this[Keys.AVATAR],
         language = this[Keys.LANGUAGE]?.let { runCatching { AppLanguage.valueOf(it) }.getOrNull() } ?: AppLanguage.EN,
-        avatarPath = this[Keys.AVATAR]
+        avatarPath = this[Keys.AVATAR_PATH]
     )
 
     suspend fun update(transform: (UserProfile) -> UserProfile) {
@@ -125,7 +125,7 @@ class UserPrefs(private val context: Context) {
             updated.calorieOverride?.let { prefs[Keys.CAL_OVERRIDE] = it } ?: prefs.remove(Keys.CAL_OVERRIDE)
             updated.proteinOverride?.let { prefs[Keys.PROTEIN_OVERRIDE] = it } ?: prefs.remove(Keys.PROTEIN_OVERRIDE)
             updated.activeRoutineId?.let { prefs[Keys.ACTIVE_ROUTINE] = it } ?: prefs.remove(Keys.ACTIVE_ROUTINE)
-            updated.avatarPath?.let { prefs[Keys.AVATAR] = it } ?: prefs.remove(Keys.AVATAR)
+            updated.avatarPath?.let { prefs[Keys.AVATAR_PATH] = it } ?: prefs.remove(Keys.AVATAR_PATH)
         }
     }
 

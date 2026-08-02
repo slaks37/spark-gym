@@ -36,7 +36,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sparkgym.core.design.CutCornerAngularShape
 import com.sparkgym.core.design.SparkColors
 import com.sparkgym.domain.model.Equipment
 import com.sparkgym.domain.model.Muscle
@@ -81,7 +80,7 @@ fun ExerciseCard(
     onFavorite: (() -> Unit)? = null,
     onClick: () -> Unit = {}
 ) {
-    val shape = CutCornerAngularShape(10f)
+    val shape = RoundedCornerShape(10.dp)
     val accent = primary.firstOrNull()?.let { muscleGroupColor(it.group) } ?: SparkColors.Cyan
 
     Row(
