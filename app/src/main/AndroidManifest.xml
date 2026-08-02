@@ -79,7 +79,7 @@
         </provider>
 
         <activity-alias
-            android:name="ViewPermissionUsageActivity"
+            android:name=".ViewPermissionUsageActivity"
             android:exported="true"
             android:targetActivity=".MainActivity"
             android:permission="android.permission.START_VIEW_PERMISSION_USAGE">

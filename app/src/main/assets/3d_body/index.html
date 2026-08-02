@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>3D Muscle Heatmap</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background-color: #090A0F; color: #fff; font-family: sans-serif; }
+    #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; touch-action: none; }
+    #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; color: #38bdf8; letter-spacing: 1px; }
+  </style>
+
+  <!-- Three.js r128 + OrbitControls, bundled in the APK rather than fetched.
+       A CDN would make the heat map — a core screen — blank on a phone with no
+       signal, and would hand the user's IP to Cloudflare and jsDelivr on every
+       open, which contradicts the offline-first, no-trackers promise. MIT. -->
+  <script src="vendor/three.min.js"></script>
+  <script src="vendor/OrbitControls.js"></script>
+</head>
+<body>
+  <div id="loading">LOADING 3D ANATOMY ENGINE...</div>
+  <div id="canvas-container"></div>
+
+  <script>
+    let scene, camera, renderer, controls;
+    const muscleMeshes = {};
+    let raycaster, mouse;
+
+    const DEFAULT_COLORS = {
+      cold: 0x38bdf8,
+      low: 0x10b981,
+      mid: 0xf59e0b,
+      high: 0xef4444
+    };
+
+    function init() {
+      const container = document.getElementById('canvas-container');
+
+      // 1. Scene setup
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x090A0F);
+
+      // 2. Camera setup
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 1.2, 4.5);
+
+      // 3. Renderer setup
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      // 4. Orbit Controls (360 Rotation & Pinch Zoom)
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.target.set(0, 1.1, 0);
+      controls.minDistance = 2.0;
+      controls.maxDistance = 7.0;
+
+      // 5. Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
+
+      const dirLight1 = new THREE.DirectionalLight(0x38bdf8, 1.2);
+      dirLight1.position.set(5, 10, 7);
+      scene.add(dirLight1);
+
+      const dirLight2 = new THREE.DirectionalLight(0xa855f7, 0.8);
+      dirLight2.position.set(-5, 5, -5);
+      scene.add(dirLight2);
+
+      const rimLight = new THREE.DirectionalLight(0xffffff, 0.5);
+      rimLight.position.set(0, -5, -5);
+      scene.add(rimLight);
+
+      // 6. Raycaster for muscle tap detection
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      build3DHumanAnatomy();
+
+      const loadingEl = document.getElementById('loading');
+      if (loadingEl) loadingEl.style.display = 'none';
+
+      // Touch / Click event listeners
+      window.addEventListener('resize', onWindowResize);
+      renderer.domElement.addEventListener('pointerdown', onPointerDown);
+
+      animate();
+    }
+
+    // ---------------------------------------------------------------
+    // Anatomy construction
+    //
+    // Muscles are not boxes. A belly is fusiform — tapering to tendon at both
+    // ends and thickest around a third of the way along — and the flat ones
+    // (pec, lat, trap) are sheets that wrap the ribcage rather than slabs
+    // floating beside it. Building both properly is the whole difference
+    // between this reading as a body and reading as a snowman.
+    // ---------------------------------------------------------------
+
+    const BONE = 0xe8e2d8;
+
+    /** Fusiform belly: a lathe whose radius peaks at `peak` along its length. */
+    function bellyGeometry(length, maxR, endR = 0.18, peak = 0.42, seg = 22) {
+      const pts = [];
+      for (let i = 0; i <= seg; i++) {
+        const t = i / seg;
+        // Smooth spindle: sine gives the belly, the ends keep a tendon stub.
+        const shaped = Math.sin(Math.PI * Math.pow(t, Math.log(0.5) / Math.log(peak)));
+        const r = maxR * (endR + (1 - endR) * shaped);
+        pts.push(new THREE.Vector2(Math.max(r, 0.004), (t - 0.5) * length));
+      }
+      return new THREE.LatheGeometry(pts, 24);
+    }
+
+    /** Two-headed belly (biceps, gastrocnemius) — a shallow groove down it. */
+    function twinBellyGeometry(length, maxR) {
+      const g = bellyGeometry(length, maxR);
+      const pos = g.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+        const a = Math.atan2(x, z);
+        // Pinch along the front midline so two heads read separately.
+        const pinch = 1 - 0.16 * Math.exp(-Math.pow(Math.sin(a) * 2.4, 2));
+        pos.setX(i, x * pinch);
+        pos.setZ(i, z * pinch);
+      }
+      g.computeVertexNormals();
+      return g;
+    }
+
+    /**
+     * Flat muscle as a domed patch rather than an extruded plate.
+     *
+     * An extrusion always shows its cut edge, which from any angle reads as a
+     * slab bolted to the torso. A squashed ellipsoid tapered along its length
+     * has no flat edge anywhere, so a pec or a lat sits on the ribcage as a
+     * swelling — which is what it actually is.
+     *
+     * `spread` widens it, `rise` is how far it stands off the bone, `taper`
+     * pulls one end in so the muscle narrows toward its insertion.
+     */
+    function patchGeometry(spread, height, rise, taper = 0.55, lean = 0.0) {
+      const g = new THREE.SphereGeometry(0.5, 30, 22);
+      const pos = g.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+        const t = (y + 0.5);                    // 0 at the bottom, 1 at the top
+        const narrow = 1 - taper * (1 - t);     // converge toward the insertion
+        x *= spread * narrow;
+        y *= height;
+        z *= rise * narrow;
+        x += lean * y;                          // let the fibres run on a slant
+        pos.setX(i, x); pos.setY(i, y); pos.setZ(i, z);
+      }
+      g.computeVertexNormals();
+      return g;
+    }
+
+    function build3DHumanAnatomy() {
+      const bodyGroup = new THREE.Group();
+      bodyGroup.name = "HumanBody";
+
+      function muscleMaterial() {
+        return new THREE.MeshStandardMaterial({
+          color: DEFAULT_COLORS.cold,
+          roughness: 0.52,
+          metalness: 0.04,
+          emissive: 0x000000
+        });
+      }
+
+      /** Registers a tappable, heat-tintable muscle. */
+      function createMuscleMesh(name, geometry, position, rotation = [0,0,0], scale = [1,1,1]) {
+        const mesh = new THREE.Mesh(geometry, muscleMaterial());
+        mesh.name = name;
+        mesh.position.set(...position);
+        mesh.rotation.set(...rotation);
+        mesh.scale.set(...scale);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        bodyGroup.add(mesh);
+        muscleMeshes[name] = mesh;
+        return mesh;
+      }
+
+      /** Scenery: skeleton and skull. Never tinted, never reported on tap. */
+      function createBone(geometry, position, rotation = [0,0,0], scale = [1,1,1]) {
+        const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
+          color: BONE, roughness: 0.85, metalness: 0.0
+        }));
+        mesh.name = "BONE";
+        mesh.position.set(...position);
+        mesh.rotation.set(...rotation);
+        mesh.scale.set(...scale);
+        mesh.receiveShadow = true;
+        bodyGroup.add(mesh);
+        return mesh;
+      }
+
+      /** Mirrors anything built on the left onto the right, as NAME_R. */
+      function mirror(name, geometry, position, rotation = [0,0,0], scale = [1,1,1]) {
+        createMuscleMesh(name, geometry, position, rotation, scale);
+        createMuscleMesh(
+          name + "_R", geometry.clone(),
+          [-position[0], position[1], position[2]],
+          [rotation[0], -rotation[1], -rotation[2]],
+          scale
+        );
+      }
+
+      // ---- Skeleton substrate -------------------------------------------
+      createBone(new THREE.SphereGeometry(0.115, 24, 20), [0, 1.62, 0], [0,0,0], [0.86, 1.12, 0.95]);
+      createBone(new THREE.CylinderGeometry(0.035, 0.038, 0.60, 12), [0, 1.05, -0.035]);   // spine
+      createBone(new THREE.CylinderGeometry(0.128, 0.146, 0.32, 20, 1, true), [0, 1.25, 0], [0,0,0], [1, 1, 0.70]); // ribcage
+      createBone(new THREE.CylinderGeometry(0.125, 0.105, 0.15, 18), [0, 0.86, 0], [0,0,0], [1, 1, 0.74]);          // pelvis
+      // Long bones, so limbs have something under the muscle.
+      [1, -1].forEach(s => {
+        createBone(new THREE.CylinderGeometry(0.026, 0.024, 0.30, 10), [s * 0.212, 1.24, 0], [0, 0, s * 0.10]);  // humerus
+        createBone(new THREE.CylinderGeometry(0.021, 0.018, 0.28, 10), [s * 0.255, 0.95, 0], [0, 0, s * 0.06]);  // radius/ulna
+        createBone(new THREE.SphereGeometry(0.055, 14, 12), [s * 0.088, 0.30, 0], [0,0,0], [0.85, 0.7, 0.9]);    // knee
+        createBone(new THREE.CylinderGeometry(0.030, 0.026, 0.46, 10), [s * 0.088, 0.55, 0]);                    // femur
+        createBone(new THREE.CylinderGeometry(0.024, 0.020, 0.40, 10), [s * 0.088, 0.09, 0]);                    // tibia
+        createBone(new THREE.BoxGeometry(0.075, 0.035, 0.19), [s * 0.088, -0.13, 0.035]);                        // foot
+        createBone(new THREE.BoxGeometry(0.052, 0.11, 0.022), [s * 0.272, 0.76, 0]);                              // hand
+      });
+
+      // ---- Neck ----------------------------------------------------------
+      createMuscleMesh("NECK", bellyGeometry(0.20, 0.062, 0.62), [0, 1.48, 0.012], [0.12, 0, 0]);
+
+      // ---- Chest: pectoralis major, fanned and wrapped -------------------
+      mirror("CHEST", patchGeometry(0.150, 0.150, 0.075, 0.50, 0.18), [0.068, 1.312, 0.078], [0, 0, -0.16]);
+
+      // ---- Deltoids: three heads capping the shoulder ---------------------
+      mirror("FRONT_DELTS", bellyGeometry(0.145, 0.062, 0.42), [0.178, 1.368, 0.048], [1.05, 0, -0.30]);
+      mirror("SIDE_DELTS",  bellyGeometry(0.165, 0.070, 0.36), [0.204, 1.382, 0.000], [0, 0, -0.20]);
+      mirror("REAR_DELTS",  bellyGeometry(0.140, 0.058, 0.44), [0.178, 1.368, -0.048], [-1.05, 0, -0.30]);
+
+      // ---- Upper arm ------------------------------------------------------
+      mirror("BICEPS",   twinBellyGeometry(0.235, 0.052),      [0.214, 1.218, 0.036], [0, 0, 0.10]);
+      mirror("TRICEPS",  bellyGeometry(0.270, 0.056, 0.30),    [0.216, 1.213, -0.038], [0, 0, 0.10]);
+      mirror("FOREARMS", bellyGeometry(0.290, 0.050, 0.26, 0.30), [0.258, 0.950, 0.008], [0, 0, 0.06]);
+
+      // ---- Trunk ----------------------------------------------------------
+      // Rectus abdominis: one sheet, grooved into the familiar segments below.
+      const absGeo = patchGeometry(0.115, 0.270, 0.062, 0.22);
+      (function segment(g) {
+        const pos = g.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+          if (z <= 0) continue;                       // only groove the outer face
+          // Tendinous intersections plus the linea alba, so it reads as a
+          // six-pack instead of one smooth shield.
+          const groove  = Math.pow(Math.abs(Math.cos(y * 24.0)), 26) * 0.016;
+          const midline = Math.exp(-Math.pow(x * 34, 2)) * 0.014;
+          pos.setZ(i, z - groove - midline);
+        }
+        g.computeVertexNormals();
+      })(absGeo);
+      createMuscleMesh("ABS", absGeo, [0, 1.072, 0.082]);
+
+      mirror("OBLIQUES", patchGeometry(0.072, 0.230, 0.070, 0.40, -0.06), [0.098, 1.055, 0.030], [0, 0, 0.05]);
+
+      // ---- Back -----------------------------------------------------------
+      mirror("TRAPS", patchGeometry(0.145, 0.230, 0.062, 0.68, -0.30), [0.062, 1.330, -0.072], [0, 0, 0.10]);
+
+      // Latissimus: broad at the spine, converging to a narrow insertion.
+      mirror("LATS", patchGeometry(0.135, 0.290, 0.072, 0.72, 0.26), [0.086, 1.135, -0.076], [0, 0, -0.10]);
+
+      mirror("LOWER_BACK", patchGeometry(0.050, 0.230, 0.058, 0.15), [0.038, 0.985, -0.068]);
+
+      // ---- Hip and thigh ---------------------------------------------------
+      mirror("GLUTES", bellyGeometry(0.215, 0.098, 0.55, 0.50), [0.098, 0.828, -0.078], [0.30, 0, -0.14]);
+      mirror("QUADS",       bellyGeometry(0.430, 0.088, 0.30, 0.52), [0.092, 0.560, 0.052], [0.03, 0, -0.02]);
+      mirror("HAMSTRINGS",  bellyGeometry(0.420, 0.076, 0.30, 0.46), [0.092, 0.555, -0.052], [-0.03, 0, -0.02]);
+      mirror("ADDUCTORS",   bellyGeometry(0.380, 0.058, 0.26, 0.40), [0.046, 0.560, 0.004], [0, 0, 0.10]);
+      mirror("ABDUCTORS",   bellyGeometry(0.330, 0.046, 0.30, 0.34), [0.140, 0.640, -0.014], [0, 0, -0.05]);
+
+      // ---- Calf -------------------------------------------------------------
+      mirror("CALVES", twinBellyGeometry(0.290, 0.064), [0.090, 0.130, -0.040], [0.05, 0, 0]);
+
+      scene.add(bodyGroup);
+    }
+
+    let pointerDownTime = 0;
+    function onPointerDown(e) {
+      pointerDownTime = Date.now();
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      setTimeout(() => {
+        if (Date.now() - pointerDownTime < 300) {
+          raycaster.setFromCamera(mouse, camera);
+          const intersects = raycaster.intersectObjects(scene.children, true);
+          if (intersects.length > 0) {
+            let hitName = intersects[0].object.name;
+            if (hitName.endsWith("_R")) hitName = hitName.substring(0, hitName.length - 2);
+            if (window.AndroidBridge && window.AndroidBridge.onMuscleTapped) {
+              window.AndroidBridge.onMuscleTapped(hitName);
+            }
+          }
+        }
+      }, 50);
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    window.setAngle = function(degrees) {
+      const rad = (degrees * Math.PI) / 180;
+      const dist = 4.5;
+      camera.position.x = dist * Math.sin(rad);
+      camera.position.z = dist * Math.cos(rad);
+      camera.position.y = 1.2;
+      controls.update();
+    };
+
+    window.updateMuscleHeat = function(heatJson) {
+      try {
+        const data = JSON.parse(heatJson);
+        for (const [muscle, intensity] of Object.entries(data)) {
+          let hexColor = DEFAULT_COLORS.cold;
+          if (intensity > 1.15) hexColor = DEFAULT_COLORS.high;
+          else if (intensity > 0.7) hexColor = DEFAULT_COLORS.mid;
+          else if (intensity > 0.25) hexColor = DEFAULT_COLORS.low;
+
+          [muscle, muscle + "_R"].forEach(name => {
+            if (muscleMeshes[name]) {
+              muscleMeshes[name].material.color.setHex(hexColor);
+              if (intensity > 0.25) {
+                muscleMeshes[name].material.emissive.setHex(hexColor);
+                muscleMeshes[name].material.emissiveIntensity = Math.min(0.5, intensity * 0.3);
+              } else {
+                // Reset, or a muscle that cools down keeps yesterday's glow.
+                muscleMeshes[name].material.emissive.setHex(0x000000);
+                muscleMeshes[name].material.emissiveIntensity = 0;
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Heat JSON error", e);
+      }
+    };
+
+    window.onload = init;
+  </script>
+</body>
+</html>

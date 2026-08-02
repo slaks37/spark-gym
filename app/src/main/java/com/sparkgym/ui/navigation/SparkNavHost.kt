@@ -230,7 +230,10 @@ fun SparkNavHost(
 
                 composable(Destination.Heatmap.route) {
                     val vm: HeatmapViewModel = viewModel(factory = factory)
-                    HeatmapScreen(vm)
+                    HeatmapScreen(
+                        viewModel = vm,
+                        onOpenExercise = { id -> navController.navigate(Destination.ExerciseDetail.of(id)) }
+                    )
                 }
 
                 composable(Destination.Nutrition.route) {

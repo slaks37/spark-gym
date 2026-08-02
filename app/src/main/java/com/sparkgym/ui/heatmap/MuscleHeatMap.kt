@@ -24,32 +24,46 @@ import com.sparkgym.domain.model.Muscle
  * The heat map itself: a body silhouette with every trained muscle shaded by how
  * much work it has taken relative to its weekly target.
  */
+import androidx.compose.foundation.gestures.detectDragGestures
+
 @Composable
 fun MuscleHeatMap(
     heat: Map<Muscle, HeatmapEngine.MuscleHeat>,
-    isFront: Boolean,
+    isFront: Boolean = true,
     modifier: Modifier = Modifier,
+    angle: ViewAngle = if (isFront) ViewAngle.FRONT else ViewAngle.BACK,
     selected: Muscle? = null,
+    onAngleChange: ((ViewAngle) -> Unit)? = null,
     onMuscleTap: (Muscle?) -> Unit = {}
 ) {
-    val flip by animateFloatAsState(
-        targetValue = if (isFront) 0f else 1f,
-        animationSpec = tween(350),
-        label = "body-flip"
-    )
-
     Box(
         modifier = modifier
             .aspectRatio(BodyGeometry.VIEW_WIDTH / BodyGeometry.VIEW_HEIGHT)
-            .pointerInput(isFront) {
+            .pointerInput(angle) {
                 detectTapGestures { offset ->
                     val scale = size.height / BodyGeometry.VIEW_HEIGHT
                     val drawnWidth = BodyGeometry.VIEW_WIDTH * scale
                     val originX = (size.width - drawnWidth) / 2f
                     val vx = (offset.x - originX) / scale
                     val vy = offset.y / scale
-                    onMuscleTap(BodyGeometry.muscleAt(vx, vy, isFront))
+                    onMuscleTap(BodyGeometry.muscleAtAngle(vx, vy, angle))
                 }
+            }
+            .pointerInput(angle) {
+                var totalDrag = 0f
+                detectDragGestures(
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        totalDrag += dragAmount.x
+                        if (totalDrag > 60f) {
+                            onAngleChange?.invoke(angle.previous())
+                            totalDrag = 0f
+                        } else if (totalDrag < -60f) {
+                            onAngleChange?.invoke(angle.next())
+                            totalDrag = 0f
+                        }
+                    }
+                )
             }
     ) {
         Canvas(Modifier.fillMaxSize()) {
@@ -66,15 +80,15 @@ fun MuscleHeatMap(
                 close()
             }
 
-            // 1. Body base.
-            val silhouette = if (isFront) BodyGeometry.silhouetteFront else BodyGeometry.silhouetteBack
+            // 1. Body base silhouette for current viewing angle.
+            val silhouette = BodyGeometry.silhouetteFor(angle)
             silhouette.forEach { p ->
-                drawPath(path(p), color = SparkColors.HeatCold.copy(alpha = 0.85f))
-                drawPath(path(p), color = SparkColors.Divider.copy(alpha = 0.6f), style = Stroke(width = 1f))
+                drawPath(path(p), color = SparkColors.HeatCold)
+                drawPath(path(p), color = SparkColors.TextMuted.copy(alpha = 0.4f), style = Stroke(width = 1.5f))
             }
 
             // 2. Muscles, shaded by intensity.
-            val source = if (isFront) BodyGeometry.front else BodyGeometry.back
+            val source = BodyGeometry.musclesForAngle(angle)
             source.forEach { (muscle, polys) ->
                 val entry = heat[muscle]
                 val intensity = entry?.intensity ?: 0f
@@ -85,24 +99,22 @@ fun MuscleHeatMap(
                     drawPath(pathObj, color = fill)
                     drawPath(
                         pathObj,
-                        color = if (isSelected) SparkColors.TextPrimary else SparkColors.Divider.copy(alpha = 0.7f),
-                        style = Stroke(width = if (isSelected) 2.5f else 1f)
+                        color = if (isSelected) SparkColors.Cyan else SparkColors.TextSecondary.copy(alpha = 0.5f),
+                        style = Stroke(width = if (isSelected) 3f else 1.2f)
                     )
                     if (intensity > 1.15f) {
-                        // Overreaching regions get a pulse ring so they stand out
-                        // from "just trained a lot".
                         drawPath(
                             pathObj,
-                            color = SparkColors.Danger.copy(alpha = 0.6f),
-                            style = Stroke(width = 2f)
+                            color = SparkColors.Danger,
+                            style = Stroke(width = 2.5f)
                         )
                     }
                 }
             }
 
-            // 3. Centre line, purely cosmetic scanline flavour.
+            // 3. Rotation axis line.
             drawLine(
-                color = SparkColors.Cyan.copy(alpha = 0.08f + 0.05f * flip),
+                color = SparkColors.Cyan.copy(alpha = 0.12f),
                 start = Offset(originX + drawnWidth / 2f, 0f),
                 end = Offset(originX + drawnWidth / 2f, size.height),
                 strokeWidth = 1f

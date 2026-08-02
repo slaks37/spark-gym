@@ -32,7 +32,7 @@ object SparkColors {
     val TextMuted = Color(0xFF94A3B8)       // Slate 400 for hints
 
     // ── Heat-map ramp ────────────────────────────────────────────────
-    val HeatCold = Color(0xFFF1F5F9)
+    val HeatCold = Color(0xFFCBD5E1)
     val HeatLow = Color(0xFF7DD3FC)
     val HeatMid = Color(0xFF38BDF8)
     val HeatHigh = Color(0xFFF59E0B)

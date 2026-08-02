@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -34,6 +35,7 @@ import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemChip
 import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.design.SystemPanel
+import com.sparkgym.ui.common.ExerciseCard
 import com.sparkgym.ui.common.SelectableChip
 
 @Composable
@@ -67,7 +69,7 @@ fun RoutineDetailScreen(
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().background(SparkColors.Void),
+        modifier = Modifier.fillMaxSize().statusBarsPadding().background(SparkColors.Void),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -162,36 +164,17 @@ fun RoutineDetailScreen(
         }
 
         items(exercises, key = { it.prescription.id }) { item ->
-            SystemPanel(
-                modifier = Modifier.fillMaxWidth().clickable { onOpenExercise(item.exercise.id) },
-                contentPadding = PaddingValues(12.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            item.exercise.name,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = SparkColors.TextPrimary
-                        )
-                        Spacer(Modifier.height(3.dp))
-                        Text(
-                            "${item.prescription.targetSets} × ${item.prescription.repsMin}-${item.prescription.repsMax}" +
-                                " · rest ${item.prescription.restSeconds}s",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = SparkColors.TextMuted
-                        )
-                        if (item.prescription.notes.isNotBlank()) {
-                            Spacer(Modifier.height(3.dp))
-                            Text(
-                                item.prescription.notes,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = SparkColors.Cyan
-                            )
-                        }
-                    }
-                    SystemChip(item.exercise.equipment.displayName, accent = SparkColors.Violet)
-                }
+            val primaryMuscles = com.sparkgym.domain.engine.ExerciseSearch.musclesFor(item.exercise.name).toSet().ifEmpty {
+                com.sparkgym.domain.model.Muscle.fromKey(item.exercise.slug.uppercase())?.let { setOf(it) } ?: setOf(com.sparkgym.domain.model.Muscle.CHEST)
             }
+            ExerciseCard(
+                name = item.exercise.name,
+                equipment = item.exercise.equipment,
+                primary = primaryMuscles,
+                secondary = emptySet(),
+                trailingLabel = "${item.prescription.targetSets} × ${item.prescription.repsMin}-${item.prescription.repsMax}",
+                onClick = { onOpenExercise(item.exercise.id) }
+            )
         }
     }
 }
