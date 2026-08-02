@@ -5,7 +5,7 @@
 [![UI](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
 [![Build](https://github.com/slaks37/spark-gym/actions/workflows/build.yml/badge.svg)](https://github.com/slaks37/spark-gym/actions/workflows/build.yml)
 [![Licence](https://img.shields.io/badge/licence-MIT-0EA5E9)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-118%20passing-16A34A)](app/src/test/java/com/sparkgym)
+[![Tests](https://img.shields.io/badge/tests-137%20passing-16A34A)](app/src/test/java/com/sparkgym)
 [![Exercises](https://img.shields.io/badge/exercises-239-E8A317)](app/src/main/java/com/sparkgym/data/seed)
 [![Programmes](https://img.shields.io/badge/programmes-14-0099CC)](app/src/main/java/com/sparkgym/data/seed/RoutineSeedPro.kt)
 [![Foods](https://img.shields.io/badge/foods-192-16A34A)](app/src/main/java/com/sparkgym/data/seed/FoodSeed.kt)
@@ -33,12 +33,14 @@ feeds Agility and your calorie budget; a logged meal feeds Intellect.
 
 ## Install it
 
-**Without building anything:** every push is built by CI, so grab the APK from the
-[Actions tab](../../actions/workflows/build.yml) — open the newest run and download
-`spark-gym-debug-apk`. It is signed with the standard debug key, so it installs on
-any phone once "install from unknown sources" is allowed for your browser or file
-manager. Tagged versions (`v1.0.0`, …) also appear under
-[Releases](../../releases).
+**Just want it on your phone?** Released versions are under
+[Releases](../../releases) — download `spark-gym-release.apk`, allow "install from
+unknown sources" for your browser or file manager, and open it.
+
+**Want the newest build instead?** Every push is built by CI. Open the latest run
+in the [Actions tab](../../actions/workflows/build.yml) and download
+`spark-gym-debug-apk`. That one is debug-signed and installs alongside the real
+app rather than over it — handy for trying a change, not for daily use.
 
 **Building it yourself.** Requirements: **JDK 17**, **Android Studio Ladybug or
 newer** (or just the Android SDK with `compileSdk 35` installed).
@@ -54,10 +56,41 @@ cd spark-gym
 Opening the folder in Android Studio and pressing Run works too — no extra setup
 is needed for everything except the direct Fitbit link (below).
 
-**Publishing a signed release** is opt-in. Set `KEYSTORE_BASE64`,
-`KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD` as repository secrets, then
-push a `v*` tag; the release job signs the APK and attaches it. Without those
-secrets the tag still publishes, but the APK is unsigned and will not install.
+### Shipping it yourself (Drive, a link, anywhere outside the Play Store)
+
+Android will not install an unsigned APK, and it will not install an update
+signed with a *different* key than the version already on the phone — it makes
+you uninstall first, which throws away every workout the user has logged. So the
+signing key is created **once** and kept forever. Losing it means no existing
+install can ever be updated again.
+
+```bash
+keytool -genkeypair -v \
+  -keystore spark-gym-release.jks \
+  -alias spark-gym \
+  -keyalg RSA -keysize 4096 -validity 10000
+```
+
+Keep `spark-gym-release.jks` somewhere safe and **out of the repository** — it is
+already covered by `.gitignore`. Then add four repository secrets under
+*Settings → Secrets and variables → Actions*:
+
+| Secret | Value |
+|---|---|
+| `KEYSTORE_BASE64` | `base64 -w0 spark-gym-release.jks` |
+| `KEYSTORE_PASSWORD` | the keystore password |
+| `KEY_ALIAS` | `spark-gym` |
+| `KEY_PASSWORD` | the key password |
+
+Now either push a `v1.0.0` tag, or run the **Build** workflow manually with
+*Also build a signed release APK* ticked. Both produce
+`spark-gym-release.apk` — signed, minified, and installable. The job verifies
+the signature before publishing, and fails outright if the secrets are missing
+rather than handing you an APK that dies with "app not installed".
+
+**Bump `versionCode` in `app/build.gradle.kts` for every build you hand out.**
+Android refuses to install an APK whose `versionCode` is not higher than the one
+already there.
 
 ---
 
@@ -238,7 +271,7 @@ fast and stack traces readable. `AppContainer` holds lazy singletons;
 `sparkViewModelFactory` wires the ViewModels in a dozen lines.
 
 **All game, coaching and nutrition maths lives in `domain/engine`** as pure
-functions with no Android dependencies, which is why it is all unit-tested — 118
+functions with no Android dependencies, which is why it is all unit-tested — 137
 tests covering the XP curve, quest scaling, heat map normalisation, progression,
 deload logic, coach rules, meal-plan scaling, library search ranking, and the
 integrity of the bundled content itself (every routine references a real
