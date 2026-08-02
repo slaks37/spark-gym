@@ -5,7 +5,7 @@
 [![UI](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
 [![Build](https://github.com/slaks37/spark-gym/actions/workflows/build.yml/badge.svg)](https://github.com/slaks37/spark-gym/actions/workflows/build.yml)
 [![Licence](https://img.shields.io/badge/licence-MIT-0EA5E9)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-137%20passing-16A34A)](app/src/test/java/com/sparkgym)
+[![Tests](https://img.shields.io/badge/tests-141%20passing-16A34A)](app/src/test/java/com/sparkgym)
 [![Exercises](https://img.shields.io/badge/exercises-239-E8A317)](app/src/main/java/com/sparkgym/data/seed)
 [![Programmes](https://img.shields.io/badge/programmes-14-0099CC)](app/src/main/java/com/sparkgym/data/seed/RoutineSeedPro.kt)
 [![Foods](https://img.shields.io/badge/foods-192-16A34A)](app/src/main/java/com/sparkgym/data/seed/FoodSeed.kt)
@@ -95,6 +95,13 @@ and it means the shipped bytecode is exactly what CI tested.
 **Bump `versionCode` in `app/build.gradle.kts` for every build you hand out.**
 Android refuses to install an APK whose `versionCode` is not higher than the one
 already there.
+
+### Google Play
+
+The same workflow also builds the App Bundle Play requires. See
+[PLAY_STORE.md](PLAY_STORE.md) for the steps that are not code — signing choice,
+the Health Connect declaration, the data safety form, and two risks worth
+deciding on before you publish.
 
 ---
 
@@ -275,7 +282,7 @@ fast and stack traces readable. `AppContainer` holds lazy singletons;
 `sparkViewModelFactory` wires the ViewModels in a dozen lines.
 
 **All game, coaching and nutrition maths lives in `domain/engine`** as pure
-functions with no Android dependencies, which is why it is all unit-tested — 137
+functions with no Android dependencies, which is why it is all unit-tested — 141
 tests covering the XP curve, quest scaling, heat map normalisation, progression,
 deload logic, coach rules, meal-plan scaling, library search ranking, and the
 integrity of the bundled content itself (every routine references a real

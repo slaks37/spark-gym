@@ -123,6 +123,22 @@ object S {
     val restTimer @Composable @ReadOnlyComposable get() = pick("Rest timer", "Timer istirahat")
     val language @Composable @ReadOnlyComposable get() = pick("Language", "Bahasa")
 
+    // ── Licences ─────────────────────────────────────────────────────
+    val openSourceLicences @Composable @ReadOnlyComposable get() =
+        pick("Open source licences", "Lisensi sumber terbuka")
+    val licencesIntro @Composable @ReadOnlyComposable get() =
+        pick(
+            "Spark Gym is built on work other people published. These are the terms it comes under.",
+            "Spark Gym dibangun di atas karya orang lain. Ini ketentuan yang berlaku untuk masing-masing."
+        )
+    val shareAlikeNotice @Composable @ReadOnlyComposable get() =
+        pick("Share-alike", "Berbagi serupa")
+    val shareAlikeBody @Composable @ReadOnlyComposable get() =
+        pick(
+            "The muscle model and the online food data carry share-alike terms: work derived from them must be offered under the same licence. Spark Gym's own code is MIT.",
+            "Model otot dan data makanan daring memakai ketentuan berbagi serupa: karya turunannya wajib memakai lisensi yang sama. Kode Spark Gym sendiri berlisensi MIT."
+        )
+
     // ── Dialogs ──────────────────────────────────────────────────────
     val acknowledge @Composable @ReadOnlyComposable get() = pick("Acknowledge", "Mengerti")
     val achievementUnlocked @Composable @ReadOnlyComposable get() =

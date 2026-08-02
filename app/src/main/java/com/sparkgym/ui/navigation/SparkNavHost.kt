@@ -48,6 +48,7 @@ import com.sparkgym.ui.nutrition.MealPlanScreen
 import com.sparkgym.ui.nutrition.NutritionScreen
 import com.sparkgym.ui.nutrition.NutritionViewModel
 import com.sparkgym.ui.profile.OnboardingScreen
+import com.sparkgym.ui.profile.LicencesScreen
 import com.sparkgym.ui.profile.ProfileScreen
 import com.sparkgym.ui.profile.ProfileViewModel
 import com.sparkgym.ui.quests.QuestScreen
@@ -271,13 +272,18 @@ fun SparkNavHost(
                     )
                 }
 
+                composable(Destination.Licences.route) {
+                    LicencesScreen { navController.popBackStack() }
+                }
+
                 composable(Destination.Profile.route) {
                     val vm: ProfileViewModel = viewModel(factory = factory)
                     ProfileScreen(
                         viewModel = vm,
                         onBack = { navController.popBackStack() },
                         onOpenConnect = { navController.navigate(Destination.Connect.route) },
-                        onOpenProgressPhotos = { navController.navigate(Destination.ProgressPhotos.route) }
+                        onOpenProgressPhotos = { navController.navigate(Destination.ProgressPhotos.route) },
+                        onOpenLicences = { navController.navigate(Destination.Licences.route) }
                     )
                 }
 

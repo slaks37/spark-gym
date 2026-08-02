@@ -25,6 +25,7 @@ sealed class Destination(val route: String) {
     data object Connect : Destination("connect")
     data object Profile : Destination("profile")
     data object ProgressPhotos : Destination("progress-photos")
+    data object Licences : Destination("licences")
     data object Onboarding : Destination("onboarding")
     data object Achievements : Destination("achievements")
 

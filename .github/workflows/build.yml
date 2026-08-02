@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       release_apk:
-        description: "Also build a signed release APK (needs the keystore secrets)"
+        description: "Also build a signed release APK + Play bundle (needs the keystore secrets)"
         type: boolean
         default: false
 
@@ -120,29 +120,42 @@ jobs:
             exit 1
           fi
 
-      - name: Assemble release APK
-        run: ./gradlew assembleRelease --stacktrace
-
-      # Signing is opt-in: set the four secrets and the release APK is signed and
-      # installable. Without them the job still publishes the unsigned APK, which
-      # is useful for inspection but will not install until it is signed.
-      - name: Sign APK
+      # Gradle signs the bundle itself; the keystore never lands in the repo.
+      - name: Decode signing key
         run: |
           set -euo pipefail
-          # Pick whichever build-tools the runner actually has rather than
-          # pinning a version that may not be installed.
-          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
           printenv KEYSTORE_BASE64 | base64 -d > "$RUNNER_TEMP/release.jks"
-          trap 'rm -f "$RUNNER_TEMP/release.jks"' EXIT
-          "$APKSIGNER" sign \
-            --ks "$RUNNER_TEMP/release.jks" \
-            --ks-pass env:KEYSTORE_PASSWORD \
-            --ks-key-alias "$KEY_ALIAS" \
-            --key-pass env:KEY_PASSWORD \
-            --out app/build/outputs/apk/release/spark-gym-release.apk \
-            app/build/outputs/apk/release/app-release-unsigned.apk
-          "$APKSIGNER" verify --print-certs \
-            app/build/outputs/apk/release/spark-gym-release.apk
+
+      # Play takes an App Bundle, not an APK. The APK is still built for
+      # sideloading and direct distribution.
+      - name: Build Play bundle and release APK
+        env:
+          SPARK_KEYSTORE: ${{ runner.temp }}/release.jks
+          SPARK_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          SPARK_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          SPARK_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew bundleRelease assembleRelease --stacktrace
+
+      - name: Upload Play bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: spark-gym-play-bundle
+          path: app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+
+      # Gradle already signed it via signingConfigs; this only confirms the
+      # certificate is really on the APK before anyone ships it.
+      - name: Verify signature
+        run: |
+          set -euo pipefail
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          APK=app/build/outputs/apk/release/app-release.apk
+          "$APKSIGNER" verify --print-certs "$APK"
+          cp "$APK" app/build/outputs/apk/release/spark-gym-release.apk
+
+      - name: Shred the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"
 
       # Always downloadable from the run, tag or not.
       - name: Upload signed APK

@@ -54,7 +54,8 @@ fun ProfileScreen(
     viewModel: ProfileViewModel,
     onBack: () -> Unit,
     onOpenConnect: () -> Unit,
-    onOpenProgressPhotos: () -> Unit
+    onOpenProgressPhotos: () -> Unit,
+    onOpenLicences: () -> Unit
 ) {
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val hunter by viewModel.hunter.collectAsStateWithLifecycle()
@@ -256,6 +257,14 @@ fun ProfileScreen(
             SystemButton("CONNECT DEVICES", onOpenConnect, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(8.dp))
             SystemButton("PROGRESS PHOTOS", onOpenProgressPhotos, modifier = Modifier.fillMaxWidth(), accent = SparkColors.Violet)
+            Spacer(Modifier.height(10.dp))
+            // Reachable from inside the app because CC BY-SA and ODbL require it.
+            SystemButton(
+                S.openSourceLicences.uppercase(),
+                onOpenLicences,
+                modifier = Modifier.fillMaxWidth(),
+                accent = SparkColors.TextMuted
+            )
         }
 
         item {

@@ -26,6 +26,24 @@ android {
     namespace = "com.sparkgym"
     compileSdk = 35
 
+    /**
+     * Release signing, read from the environment so no key material is ever in
+     * the repository. CI populates these from repository secrets; a local
+     * `./gradlew bundleRelease` without them produces an unsigned bundle, which
+     * Play will reject rather than accept silently.
+     */
+    val keystorePath: String? = System.getenv("SPARK_KEYSTORE")
+    signingConfigs {
+        if (keystorePath != null) {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("SPARK_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("SPARK_KEY_ALIAS")
+                keyPassword = System.getenv("SPARK_KEY_PASSWORD")
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "com.sparkgym"
         minSdk = 26
@@ -48,6 +66,8 @@ android {
             isMinifyEnabled = false
         }
         release {
+            signingConfig = signingConfigs.findByName("release")
+
             // Minification is off for the first release, deliberately.
             //
             // It was turned on originally, then turned off again while chasing
