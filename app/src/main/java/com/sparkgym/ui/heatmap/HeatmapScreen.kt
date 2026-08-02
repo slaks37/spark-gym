@@ -36,25 +36,37 @@ import com.sparkgym.domain.engine.HeatmapEngine
 import com.sparkgym.ui.common.SelectableChip
 import com.sparkgym.ui.workout.VolumeBars
 
+import androidx.compose.foundation.layout.statusBarsPadding
+
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
+import com.sparkgym.ui.common.ExerciseCard
+import com.sparkgym.domain.model.Muscle
+
 @Composable
-fun HeatmapScreen(viewModel: HeatmapViewModel) {
+fun HeatmapScreen(viewModel: HeatmapViewModel, onOpenExercise: (Long) -> Unit = {}) {
     val heat by viewModel.heat.collectAsStateWithLifecycle()
     val showFront by viewModel.showFront.collectAsStateWithLifecycle()
     val windowDays by viewModel.windowDays.collectAsStateWithLifecycle()
     val selected by viewModel.selected.collectAsStateWithLifecycle()
     val trend by viewModel.volumeTrend.collectAsStateWithLifecycle()
+    val exercises by viewModel.exercises.collectAsStateWithLifecycle()
+
+    var currentAngle by remember { mutableStateOf(ViewAngle.FRONT) }
 
     val ranked = viewModel.ranked(heat)
     val balance = HeatmapEngine.balanceScore(heat)
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().background(SparkColors.Void),
+        modifier = Modifier.fillMaxSize().statusBarsPadding().background(SparkColors.Void),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
             Column {
-                Text("MUSCLE HEAT MAP", style = SystemLabel.copy(color = SparkColors.Violet))
+                Text("MUSCLE HEAT MAP (360° VIEW)", style = SystemLabel.copy(color = SparkColors.Violet))
                 Text(
                     "What you actually trained",
                     style = MaterialTheme.typography.headlineSmall,
@@ -72,6 +84,22 @@ fun HeatmapScreen(viewModel: HeatmapViewModel) {
         }
 
         item {
+            androidx.compose.foundation.lazy.LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                items(ViewAngle.entries.size) { index ->
+                    val angle = ViewAngle.entries[index]
+                    SelectableChip(
+                        text = angle.labelId,
+                        selected = currentAngle == angle,
+                        onClick = { currentAngle = angle },
+                        accent = SparkColors.Cyan
+                    )
+                }
+            }
+        }
+
+        item {
             SystemPanel(accent = SparkColors.Violet) {
                 Row(
                     Modifier.fillMaxWidth(),
@@ -79,33 +107,33 @@ fun HeatmapScreen(viewModel: HeatmapViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        if (showFront) "ANTERIOR" else "POSTERIOR",
-                        style = SystemLabel.copy(color = SparkColors.Violet)
+                        currentAngle.labelId.uppercase(),
+                        style = SystemLabel.copy(color = SparkColors.Cyan)
                     )
-                    SystemButton(if (showFront) "Show back" else "Show front", { viewModel.flip() }, accent = SparkColors.Violet)
+                    Text("Geser / Drag untuk Putar 360°", style = SystemLabel.copy(color = SparkColors.TextMuted))
                 }
                 Spacer(Modifier.height(10.dp))
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     MuscleHeatMap(
                         heat = heat,
-                        isFront = showFront,
+                        angle = currentAngle,
                         selected = selected,
+                        onAngleChange = { currentAngle = it },
                         onMuscleTap = viewModel::select,
                         modifier = Modifier.height(400.dp)
                     )
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("COLD", style = SystemLabel)
+                    Text("COLD (Jarang)", style = SystemLabel.copy(color = SparkColors.Cyan))
                     Spacer(Modifier.width(8.dp))
                     Box(Modifier.weight(1f).height(10.dp)) { HeatLegend() }
                     Spacer(Modifier.width(8.dp))
-                    Text("OVERREACHED", style = SystemLabel.copy(color = SparkColors.Danger))
+                    Text("SORE (Overreached)", style = SystemLabel.copy(color = SparkColors.Danger))
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Tap a muscle to inspect it. Colour is weekly effective sets against that muscle's target, " +
-                        "counting a synergist as half a set.",
+                    "Otot berwarna biru jarang/belum dilatih minggu ini. Otot berwarna merah/oranye memiliki beban kerja tinggi (sore).",
                     style = MaterialTheme.typography.bodySmall,
                     color = SparkColors.TextMuted
                 )
@@ -114,7 +142,35 @@ fun HeatmapScreen(viewModel: HeatmapViewModel) {
 
         selected?.let { muscle ->
             heat[muscle]?.let { entry ->
-                item { MuscleDetailPanel(entry) }
+                item { MuscleDetailPanel(entry, exercises, viewModel, onOpenExercise) }
+            }
+        }
+
+        item {
+            val coldMuscles = heat.filter { it.value.intensity <= 0.25f }.keys.take(6)
+            val hotMuscles = heat.filter { it.value.intensity > 0.25f }.keys
+            SystemPanel(title = "STATUS OTOT & REKOMENDASI LATIHAN", accent = SparkColors.Cyan) {
+                if (coldMuscles.isNotEmpty()) {
+                    Text("🔵 Otot Belum Dilatih (Rekomendasi Latihan Berikutnya):", style = MaterialTheme.typography.titleSmall, color = SparkColors.Cyan)
+                    Spacer(Modifier.height(4.dp))
+                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(coldMuscles.toList().size) { index ->
+                            val m = coldMuscles.toList()[index]
+                            SystemChip(m.nameId, accent = SparkColors.Cyan)
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp))
+                }
+                if (hotMuscles.isNotEmpty()) {
+                    Text("🔥 Otot Sering Dilatih / Workload Tinggi (Sore):", style = MaterialTheme.typography.titleSmall, color = SparkColors.Amber)
+                    Spacer(Modifier.height(4.dp))
+                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(hotMuscles.toList().size) { index ->
+                            val m = hotMuscles.toList()[index]
+                            SystemChip(m.nameId, accent = SparkColors.Amber)
+                        }
+                    }
+                }
             }
         }
 
@@ -167,14 +223,27 @@ fun HeatmapScreen(viewModel: HeatmapViewModel) {
 }
 
 @Composable
-private fun MuscleDetailPanel(entry: HeatmapEngine.MuscleHeat) {
-    SystemPanel(accent = heatColor(entry.intensity), title = entry.muscle.displayName) {
+private fun MuscleDetailPanel(
+    entry: HeatmapEngine.MuscleHeat,
+    allExercises: List<com.sparkgym.data.local.ExerciseWithMuscles>,
+    viewModel: HeatmapViewModel,
+    onOpenExercise: (Long) -> Unit
+) {
+    var selectedTab by remember { mutableIntStateOf(0) }
+
+    val exerciseList = when (selectedTab) {
+        0 -> viewModel.primaryExercisesFor(entry.muscle, allExercises)
+        1 -> viewModel.secondaryExercisesFor(entry.muscle, allExercises)
+        else -> viewModel.stretchExercisesFor(entry.muscle, allExercises)
+    }
+
+    SystemPanel(accent = heatColor(entry.intensity), title = "${entry.muscle.displayName} (${entry.muscle.nameId})") {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             DetailStat(entry.effectiveSets.oneDecimal(), "Effective sets")
             DetailStat(entry.target.toInt().toString(), "Weekly target")
             DetailStat(entry.volumeKg.compactVolume(), "Volume kg")
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(10.dp))
         SegmentedBar(progress = entry.intensity.coerceAtMost(1f), color = heatColor(entry.intensity))
         Spacer(Modifier.height(8.dp))
         Text(
@@ -188,6 +257,41 @@ private fun MuscleDetailPanel(entry: HeatmapEngine.MuscleHeat) {
             style = MaterialTheme.typography.bodySmall,
             color = SparkColors.TextSecondary
         )
+
+        Spacer(Modifier.height(14.dp))
+        Text(
+            "EXERCISES FOR ${entry.muscle.displayName.uppercase()}",
+            style = SystemLabel.copy(color = SparkColors.Cyan)
+        )
+        Spacer(Modifier.height(6.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            SelectableChip("Primary", selectedTab == 0, { selectedTab = 0 }, accent = SparkColors.Cyan)
+            SelectableChip("Secondary", selectedTab == 1, { selectedTab = 1 }, accent = SparkColors.Violet)
+            SelectableChip("Stretches", selectedTab == 2, { selectedTab = 2 }, accent = SparkColors.Amber)
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        if (exerciseList.isEmpty()) {
+            Text("No specific exercises registered for this category.", style = MaterialTheme.typography.bodySmall, color = SparkColors.TextMuted)
+        } else {
+            androidx.compose.foundation.lazy.LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(exerciseList.size) { index ->
+                    val item = exerciseList[index]
+                    ExerciseCard(
+                        name = item.exercise.name,
+                        equipment = item.exercise.equipment,
+                        primary = item.muscles.filter { it.contribution >= 1f }.mapNotNull { Muscle.fromKey(it.muscle) }.toSet().ifEmpty { setOf(entry.muscle) },
+                        secondary = item.muscles.filter { it.contribution < 1f }.mapNotNull { Muscle.fromKey(it.muscle) }.toSet(),
+                        modifier = Modifier.width(260.dp),
+                        onClick = { onOpenExercise(item.exercise.id) }
+                    )
+                }
+            }
+        }
     }
 }
 

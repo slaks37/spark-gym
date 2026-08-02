@@ -28,7 +28,7 @@ import androidx.room.TypeConverters
         RoutineFolderEntity::class,
         ProgressPhotoEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

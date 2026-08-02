@@ -58,10 +58,46 @@ class SystemCoordinator(
         game.setQuestProgress(QuestMetric.WATER_ML, nutrition.observeWater(today).first().toDouble(), today)
     }
 
-    /** After a set is logged, keep the set-count quest honest. */
+    /** After a set is logged, keep quests, attributes, and badges honest. */
     suspend fun onSetLogged(sessionId: Long) {
-        val sets = workouts.observeSets(sessionId).first().count { it.isCompleted && it.setType != com.sparkgym.domain.model.SetType.WARMUP }
-        game.setQuestProgress(QuestMetric.WORKOUT_SETS, sets.toDouble())
+        val completedSets = workouts.observeSets(sessionId).first()
+            .filter { it.isCompleted && it.setType != com.sparkgym.domain.model.SetType.WARMUP }
+        
+        game.setQuestProgress(QuestMetric.WORKOUT_SETS, completedSets.size.toDouble())
+
+        var pushups = 0
+        var situps = 0
+        var squats = 0
+
+        for (set in completedSets) {
+            val exercise = workouts.exercise(set.exerciseId) ?: continue
+            val nameLower = exercise.name.lowercase()
+            val slugLower = exercise.slug.lowercase()
+            if (nameLower.contains("push-up") || nameLower.contains("push up") || slugLower.contains("pushup")) {
+                pushups += set.reps
+            }
+            if (nameLower.contains("sit-up") || nameLower.contains("sit up") || nameLower.contains("crunch") || slugLower.contains("situp")) {
+                situps += set.reps
+            }
+            if (nameLower.contains("squat") || slugLower.contains("squat")) {
+                squats += set.reps
+            }
+        }
+
+        if (pushups > 0) game.setQuestProgress(QuestMetric.PUSHUPS, pushups.toDouble())
+        if (situps > 0) game.setQuestProgress(QuestMetric.SITUPS, situps.toDouble())
+        if (squats > 0) game.setQuestProgress(QuestMetric.SQUATS, squats.toDouble())
+
+        recalculateAttributes()
+        val completed = workouts.observeCompletedCount().first()
+        val history = workouts.observeHistory().first()
+        game.evaluateAchievements(
+            completedWorkouts = completed,
+            totalVolumeKg = history.sumOf { it.totalVolumeKg },
+            streak = workouts.trainingStreak(),
+            prCount = workouts.observePersonalRecords().first().size,
+            loggedFoodDays = 0
+        )
     }
 
     suspend fun onFoodLogged() {

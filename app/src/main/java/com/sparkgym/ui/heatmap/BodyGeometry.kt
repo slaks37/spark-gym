@@ -2,13 +2,32 @@ package com.sparkgym.ui.heatmap
 
 import com.sparkgym.domain.model.Muscle
 
+enum class ViewAngle(val label: String, val labelId: String, val degrees: Int) {
+    FRONT("Front", "Depan (0°)", 0),
+    FRONT_RIGHT("Quarter R", "Serong Kanan (45°)", 45),
+    SIDE_RIGHT("Side R", "Samping Kanan (90°)", 90),
+    BACK("Back", "Belakang (180°)", 180),
+    FRONT_LEFT("Quarter L", "Serong Kiri (270°)", 270);
+
+    fun next(): ViewAngle = when (this) {
+        FRONT -> FRONT_RIGHT
+        FRONT_RIGHT -> SIDE_RIGHT
+        SIDE_RIGHT -> BACK
+        BACK -> FRONT_LEFT
+        FRONT_LEFT -> FRONT
+    }
+
+    fun previous(): ViewAngle = when (this) {
+        FRONT -> FRONT_LEFT
+        FRONT_LEFT -> BACK
+        BACK -> SIDE_RIGHT
+        SIDE_RIGHT -> FRONT_RIGHT
+        FRONT_RIGHT -> FRONT
+    }
+}
+
 /**
- * Hand-plotted body geometry, in a 100 × 200 coordinate space that the drawing
- * code scales to whatever the canvas is. Each region is a closed polygon; a
- * muscle can own several (left and right sides, mostly).
- *
- * These are stylised rather than anatomically exact — the goal is that a chest
- * day and a back day are instantly distinguishable at thumbnail size.
+ * Hand-plotted body geometry across 5 viewing angles (0°, 45°, 90°, 180°, 270°).
  */
 object BodyGeometry {
 
@@ -25,8 +44,7 @@ object BodyGeometry {
     private fun pair(p: Poly): List<Poly> = listOf(p, p.mirrored())
 
     // ------------------------------------------------------------------
-    // Base silhouette — drawn underneath the muscles so untrained regions
-    // still read as part of a body rather than floating shapes.
+    // Silhouettes for all 5 angles
     // ------------------------------------------------------------------
 
     val silhouetteFront: List<Poly> = listOf(
@@ -47,6 +65,46 @@ object BodyGeometry {
         pair(poly(39f to 184f, 47f to 183f, 48f to 191f, 37f to 192f))                         // foot
 
     val silhouetteBack: List<Poly> = silhouetteFront
+
+    val silhouetteSide: List<Poly> = listOf(
+        // head
+        poly(50f to 4f, 60f to 8f, 62f to 17f, 54f to 25f, 44f to 23f, 44f to 12f),
+        // neck
+        poly(44f to 23f, 54f to 25f, 56f to 33f, 46f to 33f),
+        // torso & back curve
+        poly(
+            46f to 33f, 62f to 38f, 64f to 55f, 59f to 75f,
+            58f to 99f, 41f to 99f, 39f to 75f, 42f to 50f
+        ),
+        // arm
+        poly(50f to 34f, 60f to 42f, 58f to 68f, 52f to 96f, 44f to 96f, 48f to 68f, 46f to 42f),
+        // thigh
+        poly(41f to 99f, 58f to 99f, 59f to 141f, 43f to 142f),
+        // calf
+        poly(43f to 142f, 59f to 141f, 57f to 183f, 44f to 184f),
+        // foot
+        poly(44f to 184f, 65f to 188f, 65f to 192f, 44f to 192f)
+    )
+
+    val silhouetteQuarter: List<Poly> = listOf(
+        // head
+        poly(50f to 4f, 59f to 8f, 61f to 17f, 55f to 25f, 43f to 24f, 41f to 14f),
+        // neck
+        poly(43f to 24f, 55f to 25f, 56f to 33f, 44f to 33f),
+        // torso
+        poly(
+            38f to 33f, 64f to 34f, 68f to 45f, 65f to 62f,
+            63f to 80f, 64f to 99f, 35f to 99f, 36f to 80f, 35f to 62f, 34f to 45f
+        ),
+        // upper arm
+        poly(33f to 34f, 24f to 40f, 21f to 58f, 22f to 71f, 30f to 73f, 32f to 55f),
+        poly(64f to 34f, 72f to 40f, 74f to 58f, 73f to 71f, 66f to 73f, 64f to 55f),
+        // legs
+        poly(36f to 99f, 49f to 99f, 48f to 141f, 38f to 142f),
+        poly(49f to 99f, 62f to 99f, 60f to 141f, 49f to 142f),
+        poly(38f to 142f, 48f to 141f, 47f to 183f, 39f to 184f),
+        poly(49f to 142f, 60f to 141f, 58f to 183f, 48f to 184f)
+    )
 
     // ------------------------------------------------------------------
     // Front muscles
@@ -93,22 +151,58 @@ object BodyGeometry {
         put(Muscle.CALVES, pair(poly(38f to 153f, 48f to 152f, 47f to 179f, 39f to 180f)))
     }
 
+    // ------------------------------------------------------------------
+    // Side profile muscles (90°)
+    // ------------------------------------------------------------------
+
+    val side: Map<Muscle, List<Poly>> = buildMap {
+        put(Muscle.SIDE_DELTS, listOf(poly(47f to 34f, 59f to 42f, 56f to 56f, 46f to 50f)))
+        put(Muscle.FRONT_DELTS, listOf(poly(56f to 38f, 62f to 44f, 60f to 54f, 56f to 52f)))
+        put(Muscle.REAR_DELTS, listOf(poly(44f to 35f, 48f to 38f, 46f to 52f, 42f to 46f)))
+        put(Muscle.CHEST, listOf(poly(58f to 42f, 64f to 50f, 61f to 64f, 56f to 60f)))
+        put(Muscle.LATS, listOf(poly(42f to 48f, 52f to 54f, 50f to 80f, 41f to 75f)))
+        put(Muscle.OBLIQUES, listOf(poly(52f to 55f, 60f to 58f, 58f to 88f, 50f to 84f)))
+        put(Muscle.ABS, listOf(poly(60f to 58f, 64f to 60f, 61f to 86f, 58f to 84f)))
+        put(Muscle.TRICEPS, listOf(poly(44f to 50f, 52f to 52f, 50f to 72f, 43f to 70f)))
+        put(Muscle.BICEPS, listOf(poly(52f to 52f, 58f to 54f, 55f to 72f, 50f to 70f)))
+        put(Muscle.FOREARMS, listOf(poly(44f to 71f, 56f to 72f, 52f to 96f, 43f to 94f)))
+        put(Muscle.GLUTES, listOf(poly(39f to 96f, 49f to 96f, 47f to 122f, 40f to 118f)))
+        put(Muscle.QUADS, listOf(poly(50f to 99f, 59f to 99f, 58f to 141f, 48f to 142f)))
+        put(Muscle.HAMSTRINGS, listOf(poly(41f to 99f, 50f to 99f, 48f to 141f, 42f to 141f)))
+        put(Muscle.CALVES, listOf(poly(42f to 142f, 52f to 141f, 49f to 183f, 43f to 184f)))
+    }
+
     /** Every muscle that has geometry on at least one view. */
-    val drawable: Set<Muscle> = front.keys + back.keys
+    val drawable: Set<Muscle> = front.keys + back.keys + side.keys
+
+    fun silhouetteFor(angle: ViewAngle): List<Poly> = when (angle) {
+        ViewAngle.FRONT -> silhouetteFront
+        ViewAngle.FRONT_RIGHT -> silhouetteQuarter
+        ViewAngle.SIDE_RIGHT -> silhouetteSide
+        ViewAngle.BACK -> silhouetteBack
+        ViewAngle.FRONT_LEFT -> silhouetteQuarter
+    }
+
+    fun musclesForAngle(angle: ViewAngle): Map<Muscle, List<Poly>> = when (angle) {
+        ViewAngle.FRONT -> front
+        ViewAngle.FRONT_RIGHT -> front + side
+        ViewAngle.SIDE_RIGHT -> side
+        ViewAngle.BACK -> back
+        ViewAngle.FRONT_LEFT -> front + side
+    }
 
     fun polysFor(muscle: Muscle, isFront: Boolean): List<Poly> =
         (if (isFront) front else back)[muscle].orEmpty()
 
-    /**
-     * Hit testing for tap-to-inspect. Standard ray-casting point-in-polygon,
-     * checked against every muscle on the visible side.
-     */
-    fun muscleAt(x: Float, y: Float, isFront: Boolean): Muscle? {
-        val source = if (isFront) front else back
+    fun muscleAtAngle(x: Float, y: Float, angle: ViewAngle): Muscle? {
+        val source = musclesForAngle(angle)
         return source.entries.firstOrNull { (_, polys) ->
             polys.any { contains(it, x, y) }
         }?.key
     }
+
+    fun muscleAt(x: Float, y: Float, isFront: Boolean): Muscle? =
+        muscleAtAngle(x, y, if (isFront) ViewAngle.FRONT else ViewAngle.BACK)
 
     private fun contains(poly: Poly, x: Float, y: Float): Boolean {
         val pts = poly.points

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -77,7 +78,7 @@ fun WorkoutScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().background(SparkColors.Void)) {
+    Column(Modifier.fillMaxSize().statusBarsPadding().background(SparkColors.Void)) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             Text(S.training.uppercase(), style = SystemLabel.copy(color = SparkColors.Cyan))
             Spacer(Modifier.height(8.dp))
