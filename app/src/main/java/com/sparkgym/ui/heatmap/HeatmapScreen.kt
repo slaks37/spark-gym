@@ -55,6 +55,7 @@ fun HeatmapScreen(viewModel: HeatmapViewModel, onOpenExercise: (Long) -> Unit = 
     val exercises by viewModel.exercises.collectAsStateWithLifecycle()
 
     var currentAngle by remember { mutableStateOf(ViewAngle.FRONT) }
+    var is3DMode by remember { mutableStateOf(true) }
 
     val ranked = viewModel.ranked(heat)
     val balance = HeatmapEngine.balanceScore(heat)
@@ -66,7 +67,7 @@ fun HeatmapScreen(viewModel: HeatmapViewModel, onOpenExercise: (Long) -> Unit = 
     ) {
         item {
             Column {
-                Text("MUSCLE HEAT MAP (360° VIEW)", style = SystemLabel.copy(color = SparkColors.Violet))
+                Text("MUSCLE HEAT MAP (360° 3D GRAPHICS)", style = SystemLabel.copy(color = SparkColors.Violet))
                 Text(
                     "What you actually trained",
                     style = MaterialTheme.typography.headlineSmall,
@@ -80,6 +81,13 @@ fun HeatmapScreen(viewModel: HeatmapViewModel, onOpenExercise: (Long) -> Unit = 
                 listOf(7 to "7 days", 14 to "14 days", 30 to "30 days").forEach { (days, label) ->
                     SelectableChip(label, windowDays == days, { viewModel.setWindow(days) }, accent = SparkColors.Violet)
                 }
+            }
+        }
+
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                SelectableChip("🌐 3D WebGL Engine", is3DMode, { is3DMode = true }, accent = SparkColors.Cyan)
+                SelectableChip("⚡ 2D Vector", !is3DMode, { is3DMode = false }, accent = SparkColors.Violet)
             }
         }
 
@@ -110,18 +118,27 @@ fun HeatmapScreen(viewModel: HeatmapViewModel, onOpenExercise: (Long) -> Unit = 
                         currentAngle.labelId.uppercase(),
                         style = SystemLabel.copy(color = SparkColors.Cyan)
                     )
-                    Text("Geser / Drag untuk Putar 360°", style = SystemLabel.copy(color = SparkColors.TextMuted))
+                    Text(if (is3DMode) "Orbit 3D & Pinch Zoom" else "Geser / Drag untuk Putar 360°", style = SystemLabel.copy(color = SparkColors.TextMuted))
                 }
                 Spacer(Modifier.height(10.dp))
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    MuscleHeatMap(
-                        heat = heat,
-                        angle = currentAngle,
-                        selected = selected,
-                        onAngleChange = { currentAngle = it },
-                        onMuscleTap = viewModel::select,
-                        modifier = Modifier.height(400.dp)
-                    )
+                    if (is3DMode) {
+                        ThreeBodyView(
+                            heat = heat,
+                            angle = currentAngle,
+                            onMuscleTap = viewModel::select,
+                            modifier = Modifier.fillMaxWidth().height(420.dp)
+                        )
+                    } else {
+                        MuscleHeatMap(
+                            heat = heat,
+                            angle = currentAngle,
+                            selected = selected,
+                            onAngleChange = { currentAngle = it },
+                            onMuscleTap = viewModel::select,
+                            modifier = Modifier.height(400.dp)
+                        )
+                    }
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
