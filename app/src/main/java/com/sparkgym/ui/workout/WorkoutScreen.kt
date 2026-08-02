@@ -23,6 +23,11 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -49,8 +54,6 @@ import com.sparkgym.core.util.S
 import com.sparkgym.domain.model.Equipment
 import com.sparkgym.domain.model.Muscle
 import com.sparkgym.ui.common.ChipRow
-import com.sparkgym.ui.common.ExerciseCard
-import com.sparkgym.ui.common.muscleGroupColor
 import com.sparkgym.ui.common.SelectableChip
 import com.sparkgym.ui.common.SparkTextField
 
@@ -149,6 +152,9 @@ private fun RoutinesTab(
     onStartEmpty: () -> Unit
 ) {
     val routines by viewModel.routines.collectAsStateWithLifecycle()
+    val folders by viewModel.folders.collectAsStateWithLifecycle()
+    
+    val folderedRoutines = remember(routines) { routines.groupBy { it.folderId } }
 
     LazyColumn(
         contentPadding = PaddingValues(16.dp),
@@ -172,32 +178,63 @@ private fun RoutinesTab(
             }
         }
 
-        items(routines, key = { it.id }) { routine ->
-            SystemPanel(
-                modifier = Modifier.fillMaxWidth().clickable { onOpenRoutine(routine.id) },
-                accent = if (routine.homeFriendly) SparkColors.Success else SparkColors.Cyan
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            routine.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = SparkColors.TextPrimary
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            routine.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = SparkColors.TextMuted
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            SystemChip("${routine.daysPerWeek} ${S.days}")
-                            SystemChip(routine.level, accent = SparkColors.Violet)
-                            SystemChip(routine.goal, accent = SparkColors.Amber)
-                            if (routine.homeFriendly) SystemChip(S.home, accent = SparkColors.Success)
-                        }
-                    }
+        folders.forEach { folder ->
+            item(key = "folder_${folder.id}") {
+                Text(
+                    folder.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = SparkColors.TextPrimary,
+                    modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+                )
+            }
+            val routinesInFolder = folderedRoutines[folder.id] ?: emptyList()
+            items(routinesInFolder, key = { it.id }) { routine ->
+                RoutineCard(routine = routine, onOpen = { onOpenRoutine(routine.id) })
+            }
+        }
+
+        val unfoldered = folderedRoutines[null] ?: emptyList()
+        if (unfoldered.isNotEmpty() && folders.isNotEmpty()) {
+            item(key = "folder_unfoldered") {
+                Text(
+                    S.routines,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = SparkColors.TextPrimary,
+                    modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+                )
+            }
+        }
+        items(unfoldered, key = { it.id }) { routine ->
+            RoutineCard(routine = routine, onOpen = { onOpenRoutine(routine.id) })
+        }
+    }
+}
+
+@Composable
+private fun RoutineCard(routine: com.sparkgym.data.local.RoutineEntity, onOpen: () -> Unit) {
+    SystemPanel(
+        modifier = Modifier.fillMaxWidth().clickable { onOpen() },
+        accent = if (routine.homeFriendly) SparkColors.Success else SparkColors.Cyan
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    routine.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = SparkColors.TextPrimary
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    routine.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SparkColors.TextMuted
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    SystemChip("${routine.daysPerWeek} ${S.days}")
+                    SystemChip(routine.level, accent = SparkColors.Violet)
+                    SystemChip(routine.goal, accent = SparkColors.Amber)
+                    if (routine.homeFriendly) SystemChip(S.home, accent = SparkColors.Success)
                 }
             }
         }
@@ -208,44 +245,23 @@ private fun RoutinesTab(
 private fun LibraryTab(viewModel: WorkoutViewModel, onOpenExercise: (Long) -> Unit) {
     val library by viewModel.library.collectAsStateWithLifecycle()
     val filters by viewModel.filters.collectAsStateWithLifecycle()
-    val suggestions by viewModel.querySuggestions.collectAsStateWithLifecycle()
 
     Column {
         Column(Modifier.padding(horizontal = 16.dp)) {
             SparkTextField(
                 value = filters.query,
                 onValueChange = viewModel::setQuery,
-                label = S.searchHint,
+                label = S.searchExercises,
                 modifier = Modifier.fillMaxWidth()
             )
-
-            // A typed body-part word is offered as a real filter, so "punggung"
-            // becomes a Lats chip in one tap instead of staying a fuzzy query.
-            if (suggestions.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(S.didYouMean, style = SystemLabel)
-                    Spacer(Modifier.width(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        suggestions.forEach { m ->
-                            SelectableChip(
-                                text = S.muscle(m),
-                                selected = false,
-                                onClick = { viewModel.setQuery(""); viewModel.setMuscle(m) },
-                                accent = muscleGroupColor(m.group)
-                            )
-                        }
-                    }
-                }
-            }
-
             Spacer(Modifier.height(10.dp))
-            BodyPartPicker(
+            ChipRow(
+                options = Muscle.entries.toList(),
                 selected = filters.muscle,
-                onSelect = viewModel::setMuscle,
-                modifier = Modifier.fillMaxWidth()
+                label = { it.displayName },
+                onSelect = viewModel::setMuscle
             )
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
             ChipRow(
                 options = Equipment.entries.toList(),
                 selected = filters.equipment,
@@ -270,17 +286,79 @@ private fun LibraryTab(viewModel: WorkoutViewModel, onOpenExercise: (Long) -> Un
             ) {
                 items(library, key = { it.exercise.id }) { item ->
                     val e = item.exercise
-                    ExerciseCard(
-                        name = e.name,
-                        equipment = e.equipment,
-                        primary = item.muscles.filter { it.contribution >= 1f }
-                            .mapNotNull { Muscle.fromKey(it.muscle) }.toSet(),
-                        secondary = item.muscles.filter { it.contribution < 1f }
-                            .mapNotNull { Muscle.fromKey(it.muscle) }.toSet(),
-                        isFavorite = e.isFavorite,
-                        onFavorite = { viewModel.toggleFavorite(e.id, !e.isFavorite) },
-                        onClick = { onOpenExercise(e.id) }
-                    )
+                    SystemPanel(
+                        modifier = Modifier.fillMaxWidth().clickable { onOpenExercise(e.id) },
+                        contentPadding = PaddingValues(12.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            val primaryMuscleKey = item.muscles
+                                .filter { it.contribution >= 1f }
+                                .mapNotNull { Muscle.fromKey(it.muscle) }
+                                .firstOrNull()
+                                
+                            val context = androidx.compose.ui.platform.LocalContext.current
+                            val iconName = "ex_" + e.name.lowercase().replace(" ", "_").replace("-", "_")
+                            val specificResId = context.resources.getIdentifier(iconName, "drawable", context.packageName)
+                            
+                            val imageResId = if (specificResId != 0) {
+                                specificResId
+                            } else when {
+                                e.equipment == Equipment.CARDIO -> com.sparkgym.R.drawable.gym_hiit_runner
+                                else -> when (primaryMuscleKey) {
+                                    Muscle.CHEST -> com.sparkgym.R.drawable.exercise_dumbbell_flys
+                                    Muscle.TRICEPS -> com.sparkgym.R.drawable.muscle_triceps
+                                    Muscle.FOREARMS -> com.sparkgym.R.drawable.muscle_forearms
+                                    Muscle.FRONT_DELTS, Muscle.SIDE_DELTS -> com.sparkgym.R.drawable.muscle_shoulders
+                                    Muscle.LATS -> com.sparkgym.R.drawable.muscle_lats
+                                    Muscle.TRAPS -> com.sparkgym.R.drawable.muscle_traps
+                                    Muscle.LOWER_BACK, Muscle.REAR_DELTS -> com.sparkgym.R.drawable.muscle_lower_back
+                                    Muscle.HAMSTRINGS -> com.sparkgym.R.drawable.muscle_hamstrings
+                                    Muscle.GLUTES -> com.sparkgym.R.drawable.muscle_glutes
+                                    Muscle.CALVES -> com.sparkgym.R.drawable.muscle_calves
+                                    Muscle.QUADS, Muscle.ADDUCTORS, Muscle.ABDUCTORS -> com.sparkgym.R.drawable.gym_squat_athlete
+                                    Muscle.BICEPS -> com.sparkgym.R.drawable.exercise_preacher_curls
+                                    Muscle.ABS -> com.sparkgym.R.drawable.gym_pushup_athlete
+                                    Muscle.OBLIQUES -> com.sparkgym.R.drawable.muscle_obliques
+                                    Muscle.NECK -> com.sparkgym.R.drawable.muscle_neck
+                                    else -> com.sparkgym.R.drawable.tool_dumbbells_rack
+                                }
+                            }
+
+                            Image(
+                                painter = painterResource(id = imageResId),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                            )
+                            Spacer(Modifier.width(14.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    e.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = SparkColors.TextPrimary
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                val primaryStr = item.muscles
+                                    .filter { it.contribution >= 1f }
+                                    .mapNotNull { Muscle.fromKey(it.muscle)?.displayName }
+                                Text(
+                                    "${e.equipment.displayName} · ${primaryStr.joinToString(", ")}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = SparkColors.TextMuted
+                                )
+                            }
+                            Icon(
+                                if (e.isFavorite) Icons.Filled.Star else Icons.Filled.StarBorder,
+                                contentDescription = "Favourite",
+                                tint = if (e.isFavorite) SparkColors.Amber else SparkColors.TextMuted,
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clickable { viewModel.toggleFavorite(e.id, !e.isFavorite) }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -324,7 +402,7 @@ private fun HistoryTab(viewModel: WorkoutViewModel) {
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                names[pr.exerciseId] ?: "Exercise",
+                                names[pr.exerciseId] ?: S.exercise,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = SparkColors.TextSecondary
                             )

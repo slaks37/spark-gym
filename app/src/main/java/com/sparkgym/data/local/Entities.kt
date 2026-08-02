@@ -11,6 +11,7 @@ import com.sparkgym.domain.model.ExerciseForce
 import com.sparkgym.domain.model.HunterClass
 import com.sparkgym.domain.model.QuestMetric
 import com.sparkgym.domain.model.QuestSource
+import com.sparkgym.domain.model.SetType
 import com.sparkgym.domain.model.TrackingType
 
 // ---------------------------------------------------------------------------
@@ -34,7 +35,8 @@ data class ExerciseEntity(
     val isCustom: Boolean = false,
     val isFavorite: Boolean = false,
     /** Used to build a "how to" search when no bundled clip exists. */
-    val mediaQuery: String = ""
+    val mediaQuery: String = "",
+    val imageUri: String? = null
 )
 
 /**
@@ -63,6 +65,13 @@ data class ExerciseMuscleEntity(
 // Routines (programs → days → prescribed exercises)
 // ---------------------------------------------------------------------------
 
+@Entity(tableName = "routine_folders")
+data class RoutineFolderEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val colorHex: String? = null
+)
+
 @Entity(tableName = "routines")
 data class RoutineEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -74,7 +83,8 @@ data class RoutineEntity(
     val level: String,
     val homeFriendly: Boolean,
     val isCustom: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val folderId: Long? = null
 )
 
 @Entity(
@@ -122,7 +132,8 @@ data class RoutineExerciseEntity(
     val repsMin: Int,
     val repsMax: Int,
     val restSeconds: Int,
-    val notes: String = ""
+    val notes: String = "",
+    val supersetId: String? = null
 )
 
 // ---------------------------------------------------------------------------
@@ -174,11 +185,12 @@ data class SetLogEntity(
     val durationSeconds: Int = 0,
     val distanceMeters: Double = 0.0,
     val rpe: Double? = null,
-    val isWarmup: Boolean = false,
+    val setType: SetType = SetType.NORMAL,
     val isCompleted: Boolean = false,
     val completedAt: Long? = null,
     /** Set when this beat the previous best estimated 1RM for the exercise. */
-    val isPersonalRecord: Boolean = false
+    val isPersonalRecord: Boolean = false,
+    val supersetId: String? = null
 )
 
 @Entity(tableName = "personal_records", indices = [Index(value = ["exerciseId"], unique = true)])
@@ -254,6 +266,14 @@ data class BodyMetricEntity(
     val bodyFatPercent: Double? = null,
     val waistCm: Double? = null,
     val notes: String = ""
+)
+
+@Entity(tableName = "progress_photos")
+data class ProgressPhotoEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val dateEpochDay: Long,
+    val weightKg: Double? = null,
+    val imageUri: String
 )
 
 // ---------------------------------------------------------------------------

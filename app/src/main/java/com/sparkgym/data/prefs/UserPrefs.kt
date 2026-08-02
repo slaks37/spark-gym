@@ -35,7 +35,8 @@ data class UserProfile(
     val wearableSource: String = WearableSource.NONE,
     val language: AppLanguage = AppLanguage.EN,
     /** content:// URI of the user's chosen photo, null when unset. */
-    val avatarUri: String? = null
+    val avatarUri: String? = null,
+    val avatarPath: String? = null
 ) {
     val tdee: Double get() = EnergyMath.tdee(sex, weightKg, heightCm, age, activity)
 
@@ -76,6 +77,7 @@ class UserPrefs(private val context: Context) {
         val AVATAR = stringPreferencesKey("avatar_uri")
         val LAST_SYNC_DAY = longPreferencesKey("last_sync_day")
         val LANGUAGE = stringPreferencesKey("language")
+        val AVATAR = stringPreferencesKey("avatar_path")
     }
 
     val profile: Flow<UserProfile> = context.dataStore.data.map { it.toProfile() }
@@ -99,7 +101,8 @@ class UserPrefs(private val context: Context) {
         heatmapWindowDays = this[Keys.HEATMAP_WINDOW] ?: 7,
         wearableSource = this[Keys.WEARABLE] ?: WearableSource.NONE,
         avatarUri = this[Keys.AVATAR],
-        language = this[Keys.LANGUAGE]?.let { runCatching { AppLanguage.valueOf(it) }.getOrNull() } ?: AppLanguage.EN
+        language = this[Keys.LANGUAGE]?.let { runCatching { AppLanguage.valueOf(it) }.getOrNull() } ?: AppLanguage.EN,
+        avatarPath = this[Keys.AVATAR]
     )
 
     suspend fun update(transform: (UserProfile) -> UserProfile) {
@@ -122,6 +125,7 @@ class UserPrefs(private val context: Context) {
             updated.calorieOverride?.let { prefs[Keys.CAL_OVERRIDE] = it } ?: prefs.remove(Keys.CAL_OVERRIDE)
             updated.proteinOverride?.let { prefs[Keys.PROTEIN_OVERRIDE] = it } ?: prefs.remove(Keys.PROTEIN_OVERRIDE)
             updated.activeRoutineId?.let { prefs[Keys.ACTIVE_ROUTINE] = it } ?: prefs.remove(Keys.ACTIVE_ROUTINE)
+            updated.avatarPath?.let { prefs[Keys.AVATAR] = it } ?: prefs.remove(Keys.AVATAR)
         }
     }
 

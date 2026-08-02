@@ -58,10 +58,18 @@ import com.sparkgym.ui.heatmap.MuscleHeatMap
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.asImageBitmap
+import android.graphics.BitmapFactory
+import java.io.File
+import com.sparkgym.data.prefs.UserProfile
 
 @Composable
 fun StatusScreen(
     viewModel: HunterViewModel,
+    profileFlow: kotlinx.coroutines.flow.Flow<UserProfile>?, 
     onOpenAchievements: () -> Unit,
     onOpenProfile: () -> Unit,
     onOpenConnect: () -> Unit,
@@ -71,6 +79,7 @@ fun StatusScreen(
     val advice by viewModel.advice.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()
     val hunter = state.hunter
+    val userProfile by profileFlow?.collectAsStateWithLifecycle(initialValue = UserProfile()) ?: androidx.compose.runtime.mutableStateOf(UserProfile())
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(SparkColors.Void),
@@ -121,7 +130,7 @@ fun StatusScreen(
         }
 
         if (hunter != null) {
-            item { LevelPanel(hunter) }
+            item { LevelPanel(hunter, userProfile) }
             item { AttributePanel(hunter, onSpend = viewModel::spendPoint) }
         }
 
@@ -257,25 +266,40 @@ fun StatusScreen(
 }
 
 @Composable
-private fun LevelPanel(hunter: HunterProfile) {
+private fun LevelPanel(hunter: HunterProfile, userProfile: UserProfile) {
     val rankColor = RankColor.valueOf(hunter.rank.name).color
     SystemPanel(accent = rankColor) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier
-                    .size(62.dp)
-                    .background(rankColor.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        hunter.rank.label,
-                        color = rankColor,
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.headlineMedium
+            val avatarPath = userProfile.avatarPath
+            if (avatarPath != null && File(avatarPath).exists()) {
+                val bitmap = BitmapFactory.decodeFile(avatarPath)
+                if (bitmap != null) {
+                    androidx.compose.foundation.Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Avatar",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(62.dp)
+                            .clip(CircleShape)
                     )
-                    Text("RANK", style = SystemLabel.copy(color = rankColor, fontSize = 8.sp))
+                }
+            } else {
+                Box(
+                    Modifier
+                        .size(62.dp)
+                        .background(rankColor.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            hunter.rank.label,
+                            color = rankColor,
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                        Text("RANK", style = SystemLabel.copy(color = rankColor, fontSize = 8.sp))
+                    }
                 }
             }
             Spacer(Modifier.width(14.dp))

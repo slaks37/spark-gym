@@ -2,6 +2,7 @@ package com.sparkgym.ui.workout
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,12 +11,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -33,8 +36,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sparkgym.core.design.SegmentedBar
 import com.sparkgym.core.design.SparkColors
@@ -43,9 +50,11 @@ import com.sparkgym.core.design.SystemChip
 import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.design.SystemPanel
 import com.sparkgym.core.util.Dates
+import com.sparkgym.core.util.S
 import com.sparkgym.core.util.compactVolume
 import com.sparkgym.data.local.SetLogEntity
 import com.sparkgym.domain.engine.StrengthMath
+import com.sparkgym.domain.model.SetType
 import com.sparkgym.domain.model.TrackingType
 import com.sparkgym.ui.common.ConfirmDialog
 import com.sparkgym.ui.common.NumberCell
@@ -57,7 +66,8 @@ fun ActiveSessionScreen(
     viewModel: SessionViewModel,
     workoutViewModel: WorkoutViewModel,
     sessionId: Long,
-    onExit: () -> Unit
+    onExit: () -> Unit,
+    onShareWorkout: (Long) -> Unit
 ) {
     LaunchedEffect(sessionId) { viewModel.bind(sessionId) }
 
@@ -68,6 +78,29 @@ fun ActiveSessionScreen(
 
     var showDiscard by remember { mutableStateOf(false) }
     var showPicker by remember { mutableStateOf(false) }
+    var showPlateCalculator by remember { mutableStateOf(false) }
+    var setTypeTarget by remember { mutableStateOf<SetLogEntity?>(null) }
+
+    val groupedBlocks = remember(state.blocks) {
+        val groups = mutableListOf<List<SessionViewModel.ExerciseBlock>>()
+        var currentGroup = mutableListOf<SessionViewModel.ExerciseBlock>()
+        var currentSupersetId: String? = null
+        for (block in state.blocks) {
+            if (block.supersetId != null && block.supersetId == currentSupersetId) {
+                currentGroup.add(block)
+            } else {
+                if (currentGroup.isNotEmpty()) {
+                    groups.add(currentGroup)
+                }
+                currentGroup = mutableListOf(block)
+                currentSupersetId = block.supersetId
+            }
+        }
+        if (currentGroup.isNotEmpty()) {
+            groups.add(currentGroup)
+        }
+        groups
+    }
 
     Box(Modifier.fillMaxSize().background(SparkColors.Void)) {
         LazyColumn(
@@ -77,13 +110,19 @@ fun ActiveSessionScreen(
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("IN PROGRESS", style = SystemLabel.copy(color = SparkColors.Success))
+                        Text(S.inProgress, style = SystemLabel.copy(color = SparkColors.Success))
                         Text(
                             state.session?.name ?: "Session",
                             style = MaterialTheme.typography.titleLarge,
                             color = SparkColors.TextPrimary
                         )
                     }
+                    SystemButton(
+                        "Plates", 
+                        { showPlateCalculator = true },
+                        accent = SparkColors.PanelHigh,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
                     Text(
                         Dates.stopwatch(state.elapsedSeconds),
                         style = MaterialTheme.typography.headlineSmall,
@@ -94,31 +133,66 @@ fun ActiveSessionScreen(
 
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    MiniStat("${state.completedSets}/${state.totalSets}", "Sets", Modifier.weight(1f))
-                    MiniStat("${state.volumeKg.compactVolume()} kg", "Volume", Modifier.weight(1f))
+                    MiniStat("${state.completedSets}/${state.totalSets}", S.sets, Modifier.weight(1f))
+                    MiniStat("${state.volumeKg.compactVolume()} kg", S.volume, Modifier.weight(1f))
                     MiniStat(
                         "${state.blocks.count { it.completedSets > 0 }}/${state.blocks.size}",
-                        "Exercises",
+                        S.exercises,
                         Modifier.weight(1f)
                     )
                 }
             }
 
-            items(state.blocks, key = { it.exercise.id }) { block ->
-                ExerciseBlockCard(
-                    block = block,
-                    defaultRest = DEFAULT_REST_SECONDS,
-                    onUpdate = viewModel::updateSet,
-                    onComplete = { set, rest -> viewModel.completeSet(set, rest) },
-                    onUncomplete = viewModel::uncompleteSet,
-                    onAddSet = { viewModel.addSet(block.exercise.id) },
-                    onDeleteSet = viewModel::deleteSet
-                )
+            items(groupedBlocks, key = { it.first().exercise.id }) { group ->
+                if (group.size == 1 && group.first().supersetId == null) {
+                    ExerciseBlockCard(
+                        block = group.first(),
+                        defaultRest = DEFAULT_REST_SECONDS,
+                        onUpdate = viewModel::updateSet,
+                        onComplete = { set, rest -> viewModel.completeSet(set, rest) },
+                        onUncomplete = viewModel::uncompleteSet,
+                        onAddSet = { viewModel.addSet(group.first().exercise.id) },
+                        onDeleteSet = viewModel::deleteSet,
+                        onSetTypeTap = { setTypeTarget = it }
+                    )
+                } else {
+                    // Superset grouping
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(androidx.compose.foundation.layout.IntrinsicSize.Min)
+                            .clip(RoundedCornerShape(12.dp))
+                    ) {
+                        Box(
+                            Modifier
+                                .width(4.dp)
+                                .fillMaxHeight()
+                                .background(SparkColors.Amber, RoundedCornerShape(12.dp))
+                        )
+                        Column(
+                            modifier = Modifier.weight(1f).padding(start = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            group.forEach { block ->
+                                ExerciseBlockCard(
+                                    block = block,
+                                    defaultRest = DEFAULT_REST_SECONDS,
+                                    onUpdate = viewModel::updateSet,
+                                    onComplete = { set, rest -> viewModel.completeSet(set, rest) },
+                                    onUncomplete = viewModel::uncompleteSet,
+                                    onAddSet = { viewModel.addSet(block.exercise.id) },
+                                    onDeleteSet = viewModel::deleteSet,
+                                    onSetTypeTap = { setTypeTarget = it }
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             item {
                 SystemButton(
-                    "Add exercise",
+                    S.addExercise,
                     { showPicker = true },
                     icon = Icons.Filled.Add,
                     modifier = Modifier.fillMaxWidth()
@@ -128,13 +202,13 @@ fun ActiveSessionScreen(
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                     SystemButton(
-                        "Discard",
+                        S.discard,
                         { showDiscard = true },
                         accent = SparkColors.Danger,
                         modifier = Modifier.weight(1f)
                     )
                     SystemButton(
-                        "Finish",
+                        S.finish,
                         { viewModel.finish() },
                         accent = SparkColors.Success,
                         enabled = state.completedSets > 0,
@@ -167,9 +241,9 @@ fun ActiveSessionScreen(
 
     if (showDiscard) {
         ConfirmDialog(
-            title = "Discard session",
-            body = "Every set logged in this session will be deleted. This cannot be undone.",
-            confirmText = "Discard",
+            title = S.discardSession,
+            body = S.discardSessionBody,
+            confirmText = S.discard,
             onConfirm = {
                 showDiscard = false
                 viewModel.discard()
@@ -181,16 +255,33 @@ fun ActiveSessionScreen(
 
     prFlash?.let {
         SystemMessageDialog(
-            title = "New record",
-            lines = listOf(it, "The System has recorded your best lift."),
+            title = S.newRecord,
+            lines = listOf(it, S.newRecordBody),
             accent = SparkColors.Amber,
             onDismiss = viewModel::clearPrFlash
         )
     }
 
+    // ── Set type picker bottom sheet ──
+    setTypeTarget?.let { targetSet ->
+        SetTypePickerDialog(
+            currentType = targetSet.setType,
+            onPick = { newType ->
+                viewModel.updateSet(targetSet.copy(setType = newType))
+                setTypeTarget = null
+            },
+            onDismiss = { setTypeTarget = null }
+        )
+    }
+
+    // ── Plate Calculator ──
+    if (showPlateCalculator) {
+        PlateCalculatorDialog(onDismiss = { showPlateCalculator = false })
+    }
+
     finished?.let { outcome ->
         val lines = buildList {
-            add("${outcome.summary.completedSets} sets · ${outcome.summary.volumeKg.roundToInt()} kg")
+            add("${outcome.summary.completedSets} ${S.sets} · ${outcome.summary.volumeKg.roundToInt()} kg")
             addAll(outcome.xp.breakdown.map { "${it.first}: +${it.second}" })
             if (outcome.xp.multiplier > 1.0) {
                 add("Streak bonus ×${String.format(java.util.Locale.US, "%.2f", outcome.xp.multiplier)}")
@@ -203,12 +294,17 @@ fun ActiveSessionScreen(
             outcome.newAchievements.forEach { add("Achievement unlocked") }
         }
         SystemMessageDialog(
-            title = "Session complete",
+            title = S.sessionComplete,
             lines = lines,
             accent = SparkColors.Success,
             onDismiss = {
                 viewModel.consumeFinish()
                 onExit()
+            },
+            secondaryText = "Share",
+            onSecondaryAction = {
+                viewModel.consumeFinish()
+                onShareWorkout(sessionId)
             }
         )
     }
@@ -230,7 +326,8 @@ private fun ExerciseBlockCard(
     onComplete: (SetLogEntity, Int) -> Unit,
     onUncomplete: (SetLogEntity) -> Unit,
     onAddSet: () -> Unit,
-    onDeleteSet: (Long) -> Unit
+    onDeleteSet: (Long) -> Unit,
+    onSetTypeTap: (SetLogEntity) -> Unit
 ) {
     val tracking = block.exercise.tracking
 
@@ -245,7 +342,7 @@ private fun ExerciseBlockCard(
                 if (block.lastTime.isNotEmpty()) {
                     val last = block.lastTime.first()
                     Text(
-                        "Last time: ${last.weightKg.roundToInt()} kg × ${last.reps}",
+                        "${S.lastTime}: ${last.weightKg.roundToInt()} kg × ${last.reps}",
                         style = MaterialTheme.typography.bodySmall,
                         color = SparkColors.TextMuted
                     )
@@ -287,7 +384,8 @@ private fun ExerciseBlockCard(
                 onUpdate = onUpdate,
                 onComplete = { onComplete(it, defaultRest) },
                 onUncomplete = onUncomplete,
-                onDelete = { onDeleteSet(set.id) }
+                onDelete = { onDeleteSet(set.id) },
+                onSetTypeTap = { onSetTypeTap(set) }
             )
         }
 
@@ -299,9 +397,17 @@ private fun ExerciseBlockCard(
         ) {
             Icon(Icons.Filled.Add, null, tint = SparkColors.Cyan, modifier = Modifier.size(14.dp))
             Spacer(Modifier.width(6.dp))
-            Text("ADD SET", style = SystemLabel.copy(color = SparkColors.Cyan))
+            Text(S.addSet, style = SystemLabel.copy(color = SparkColors.Cyan))
         }
     }
+}
+
+/** Returns the accent colour for each set type. */
+private fun setTypeColor(type: SetType): Color = when (type) {
+    SetType.NORMAL -> SparkColors.TextSecondary
+    SetType.WARMUP -> SparkColors.Amber
+    SetType.DROP_SET -> SparkColors.Violet
+    SetType.FAILURE -> SparkColors.Danger
 }
 
 @Composable
@@ -311,7 +417,8 @@ private fun SetRow(
     onUpdate: (SetLogEntity) -> Unit,
     onComplete: (SetLogEntity) -> Unit,
     onUncomplete: (SetLogEntity) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onSetTypeTap: () -> Unit
 ) {
     // Local text state so typing "12.5" does not fight the database round-trip.
     var weightText by remember(set.id) {
@@ -343,13 +450,26 @@ private fun SetRow(
         modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            set.setNumber.toString(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = rowAccent,
-            modifier = Modifier.width(34.dp),
-            textAlign = TextAlign.Center
-        )
+        // ── Set type badge (tap to change) ──
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(setTypeColor(set.setType).copy(alpha = 0.12f))
+                .clickable(onClick = onSetTypeTap),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = if (set.setType == SetType.NORMAL) set.setNumber.toString()
+                       else set.setType.displayKey,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp
+                ),
+                color = setTypeColor(set.setType),
+                textAlign = TextAlign.Center
+            )
+        }
 
         when (tracking) {
             TrackingType.DURATION -> {
@@ -376,14 +496,14 @@ private fun SetRow(
         ) {
             Icon(
                 Icons.Filled.Check,
-                contentDescription = if (done) "Undo set" else "Complete set",
+                contentDescription = if (done) S.undoSet else S.completeSet,
                 tint = if (done) SparkColors.Success else SparkColors.TextMuted
             )
         }
         IconButton(onClick = onDelete, modifier = Modifier.size(24.dp)) {
             Icon(
                 Icons.Filled.Delete,
-                contentDescription = "Delete set",
+                contentDescription = S.deleteSet,
                 tint = SparkColors.TextMuted,
                 modifier = Modifier.size(14.dp)
             )
@@ -407,7 +527,7 @@ private fun RestTimerBar(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    if (done) "REST COMPLETE" else "REST",
+                    if (done) S.restComplete else S.restLabel,
                     style = SystemLabel.copy(color = if (done) SparkColors.Success else SparkColors.Cyan)
                 )
                 Text(
@@ -421,7 +541,7 @@ private fun RestTimerBar(
             SystemButton("+30", { onAdjust(30) })
             Spacer(Modifier.width(6.dp))
             IconButton(onClick = onSkip) {
-                Icon(Icons.Filled.Close, "Skip rest", tint = SparkColors.TextMuted)
+                Icon(Icons.Filled.Close, S.skipRest, tint = SparkColors.TextMuted)
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -430,6 +550,63 @@ private fun RestTimerBar(
             color = if (done) SparkColors.Success else SparkColors.Cyan,
             height = 6.dp
         )
+    }
+}
+
+// ── Set Type Picker Dialog ──────────────────────────────────────────
+
+@Composable
+private fun SetTypePickerDialog(
+    currentType: SetType,
+    onPick: (SetType) -> Unit,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        SystemPanel(modifier = Modifier.fillMaxWidth(), title = S.changeSetType) {
+            SetType.entries.forEach { type ->
+                val label = when (type) {
+                    SetType.NORMAL -> S.setTypeNormal
+                    SetType.WARMUP -> S.setTypeWarmup
+                    SetType.DROP_SET -> S.setTypeDropSet
+                    SetType.FAILURE -> S.setTypeFailure
+                }
+                val isSelected = type == currentType
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (isSelected) setTypeColor(type).copy(alpha = 0.12f) else Color.Transparent)
+                        .clickable { onPick(type) }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(setTypeColor(type).copy(alpha = 0.18f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            type.displayKey,
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            color = setTypeColor(type)
+                        )
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (isSelected) setTypeColor(type) else SparkColors.TextPrimary,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                    )
+                    if (isSelected) {
+                        Spacer(Modifier.weight(1f))
+                        Icon(Icons.Filled.Check, null, tint = setTypeColor(type), modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -443,11 +620,11 @@ private fun ExercisePickerDialog(
     val filters by workoutViewModel.filters.collectAsStateWithLifecycle()
 
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
-        SystemPanel(modifier = Modifier.fillMaxWidth(), title = "Add exercise") {
+        SystemPanel(modifier = Modifier.fillMaxWidth(), title = S.addExercise) {
             com.sparkgym.ui.common.SparkTextField(
                 value = filters.query,
                 onValueChange = workoutViewModel::setQuery,
-                label = "Search",
+                label = S.searchExercises,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(10.dp))

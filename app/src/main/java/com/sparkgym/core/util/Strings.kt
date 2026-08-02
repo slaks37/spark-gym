@@ -139,6 +139,9 @@ object S {
     val howTo @Composable @ReadOnlyComposable get() = pick("How to do it", "Cara melakukan")
     val recentSets @Composable @ReadOnlyComposable get() = pick("Your recent sets", "Set terakhirmu")
     val musclesWorked @Composable @ReadOnlyComposable get() = pick("Muscles worked", "Otot yang dilatih")
+    val primary @Composable @ReadOnlyComposable get() = pick("PRIMARY", "UTAMA")
+    val secondary @Composable @ReadOnlyComposable get() = pick("SECONDARY", "SEKUNDER")
+    val e1RM @Composable @ReadOnlyComposable get() = pick("e1RM", "e1RM")
 
     // ── Profile & photo ──────────────────────────────────────────────
     val profilePhoto @Composable @ReadOnlyComposable get() = pick("Profile photo", "Foto profil")
@@ -161,7 +164,6 @@ object S {
     @Composable @ReadOnlyComposable
     fun stretchHowTo(stretch: SeedStretch): String = pick(stretch.howToEn, stretch.howToId)
 
-
     // ── Library search ───────────────────────────────────────────────
     val tapBodyPart @Composable @ReadOnlyComposable get() =
         pick("Or tap the body part you want to train", "Atau ketuk bagian tubuh yang ingin dilatih")
@@ -182,6 +184,64 @@ object S {
     /** Meal-slot names, so the diary and the plans read in the chosen language. */
     @Composable @ReadOnlyComposable
     fun meal(m: Meal): String = pick(m.displayName, m.nameId)
+
+    // ── Coach Screen ─────────────────────────────────────────────────
+    val yourDataReadBackToYou @Composable @ReadOnlyComposable get() = pick("Your data, read back to you", "Data Anda, dibacakan untuk Anda")
+    val headline @Composable @ReadOnlyComposable get() = pick("HEADLINE", "BERITA UTAMA")
+    val thisWeek @Composable @ReadOnlyComposable get() = pick("This week", "Minggu ini")
+    val effSets @Composable @ReadOnlyComposable get() = pick("Eff. sets", "Set efektif")
+    val stepsPerDay @Composable @ReadOnlyComposable get() = pick("Steps/day", "Langkah/hari")
+    val sleep @Composable @ReadOnlyComposable get() = pick("Sleep", "Tidur")
+    val food @Composable @ReadOnlyComposable get() = pick("Food", "Makanan")
+    val bodyweightTrending @Composable @ReadOnlyComposable get() = pick("Bodyweight trending", "Tren berat badan")
+    val perWeek @Composable @ReadOnlyComposable get() = pick("per week", "per minggu")
+    val fatigueIndex @Composable @ReadOnlyComposable get() = pick("Fatigue index", "Indeks kelelahan")
+    val deloadRecommended @Composable @ReadOnlyComposable get() = pick("Deload recommended", "Disarankan deload")
+    val accumulatingWorthWatching @Composable @ReadOnlyComposable get() = pick("Accumulating — worth watching", "Terakumulasi — patut diawasi")
+    val whatToChange @Composable @ReadOnlyComposable get() = pick("WHAT TO CHANGE", "APA YANG PERLU DIUBAH")
+    val whatIsWorking @Composable @ReadOnlyComposable get() = pick("WHAT IS WORKING", "APA YANG BERHASIL")
+    val coachDisclaimer @Composable @ReadOnlyComposable get() = pick(
+        "Every line above is a rule over your own logged data — no guessing, no black box. Tap refresh after a session to re-run the analysis.",
+        "Setiap baris di atas berasal dari data Anda sendiri — tanpa menebak. Ketuk segarkan setelah sesi untuk menganalisis ulang."
+    )
+
+    // ── Session / Active workout ──────────────────────────────────────
+    val inProgress @Composable @ReadOnlyComposable get() = pick("IN PROGRESS", "SEDANG BERLANGSUNG")
+    val sessionComplete @Composable @ReadOnlyComposable get() = pick("Session complete", "Sesi selesai")
+    val volume @Composable @ReadOnlyComposable get() = pick("Volume", "Volume")
+    val exercises @Composable @ReadOnlyComposable get() = pick("Exercises", "Latihan")
+    val discard @Composable @ReadOnlyComposable get() = pick("Discard", "Buang")
+    val finish @Composable @ReadOnlyComposable get() = pick("Finish", "Selesai")
+    val discardSession @Composable @ReadOnlyComposable get() = pick("Discard session", "Buang sesi")
+    val discardSessionBody @Composable @ReadOnlyComposable get() = pick(
+        "Every set logged in this session will be deleted. This cannot be undone.",
+        "Semua set yang tercatat di sesi ini akan dihapus. Tindakan ini tidak bisa dibatalkan."
+    )
+    val newRecord @Composable @ReadOnlyComposable get() = pick("New record", "Rekor baru")
+    val newRecordBody @Composable @ReadOnlyComposable get() = pick("The System has recorded your best lift.", "Sistem mencatat angkatan terbaikmu.")
+    val restComplete @Composable @ReadOnlyComposable get() = pick("REST COMPLETE", "ISTIRAHAT SELESAI")
+    val restLabel @Composable @ReadOnlyComposable get() = pick("REST", "ISTIRAHAT")
+    val lastTime @Composable @ReadOnlyComposable get() = pick("Last time", "Terakhir")
+    val addSet @Composable @ReadOnlyComposable get() = pick("ADD SET", "TAMBAH SET")
+    val undoSet @Composable @ReadOnlyComposable get() = pick("Undo set", "Batalkan set")
+    val completeSet @Composable @ReadOnlyComposable get() = pick("Complete set", "Selesaikan set")
+    val deleteSet @Composable @ReadOnlyComposable get() = pick("Delete set", "Hapus set")
+    val skipRest @Composable @ReadOnlyComposable get() = pick("Skip rest", "Lewati istirahat")
+
+    // ── Set types ────────────────────────────────────────────────────
+    val setTypeNormal @Composable @ReadOnlyComposable get() = pick("Normal", "Normal")
+    val setTypeWarmup @Composable @ReadOnlyComposable get() = pick("Warm-up", "Pemanasan")
+    val setTypeDropSet @Composable @ReadOnlyComposable get() = pick("Drop Set", "Drop Set")
+    val setTypeFailure @Composable @ReadOnlyComposable get() = pick("Failure", "Gagal Total")
+    val changeSetType @Composable @ReadOnlyComposable get() = pick("Change set type", "Ubah tipe set")
+
+    // ── Plate calculator ─────────────────────────────────────────────
+    val plateCalculator @Composable @ReadOnlyComposable get() = pick("Plate Calculator", "Kalkulator Plat")
+    val targetWeight @Composable @ReadOnlyComposable get() = pick("Target weight (kg)", "Berat target (kg)")
+    val barWeight @Composable @ReadOnlyComposable get() = pick("Bar weight", "Berat bar")
+    val eachSide @Composable @ReadOnlyComposable get() = pick("Each side", "Tiap sisi")
+    val noPlatesNeeded @Composable @ReadOnlyComposable get() = pick("No plates needed — just the bar!", "Tidak perlu plat — cuma bar!")
+    val weightTooLight @Composable @ReadOnlyComposable get() = pick("Target is less than the bar weight.", "Target lebih ringan dari berat bar.")
 
     // ── Helper ───────────────────────────────────────────────────────
 

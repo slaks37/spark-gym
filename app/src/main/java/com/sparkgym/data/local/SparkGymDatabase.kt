@@ -24,7 +24,9 @@ import androidx.room.TypeConverters
         HunterStateEntity::class,
         QuestEntity::class,
         AchievementEntity::class,
-        XpEventEntity::class
+        XpEventEntity::class,
+        RoutineFolderEntity::class,
+        ProgressPhotoEntity::class
     ],
     version = 1,
     exportSchema = true
@@ -38,6 +40,7 @@ abstract class SparkGymDatabase : RoomDatabase() {
     abstract fun nutritionDao(): NutritionDao
     abstract fun wearableDao(): WearableDao
     abstract fun gameDao(): GameDao
+    abstract fun progressPhotoDao(): ProgressPhotoDao
 
     companion object {
         private const val NAME = "spark_gym.db"

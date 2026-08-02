@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -41,25 +42,9 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.foundation.Canvas
 
 /**
- * A rectangle with its corners sliced off — the silhouette every System dialog uses.
+ * Modern smooth rounded shape for all panels.
  */
-class CutCornerAngularShape(private val cutDp: Float = 14f) : Shape {
-    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
-        val c = with(density) { cutDp.dp.toPx() }.coerceAtMost(size.minDimension / 2f)
-        val path = Path().apply {
-            moveTo(c, 0f)
-            lineTo(size.width - c, 0f)
-            lineTo(size.width, c)
-            lineTo(size.width, size.height - c)
-            lineTo(size.width - c, size.height)
-            lineTo(c, size.height)
-            lineTo(0f, size.height - c)
-            lineTo(0f, c)
-            close()
-        }
-        return Outline.Generic(path)
-    }
-}
+val SystemPanelShape = RoundedCornerShape(24.dp)
 
 /**
  * The workhorse container. Everything the System says to you sits inside one of these.
@@ -74,19 +59,18 @@ fun SystemPanel(
         androidx.compose.foundation.layout.PaddingValues(16.dp),
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit
 ) {
-    val shape = CutCornerAngularShape()
+    val shape = SystemPanelShape
     Column(
         modifier = modifier
-            .clip(shape)
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        SparkColors.Panel,
-                        SparkColors.PanelHigh.copy(alpha = 0.5f)
-                    )
-                )
+            .shadow(
+                elevation = 12.dp,
+                shape = shape,
+                spotColor = Color(0x1A000000),
+                ambientColor = Color(0x0A000000)
             )
-            .border(BorderStroke(1.dp, accent.copy(alpha = 0.25f)), shape)
+            .clip(shape)
+            .background(SparkColors.Panel)
+            .border(1.dp, SparkColors.Divider, shape)
             .padding(contentPadding)
     ) {
         if (title != null) {
@@ -193,15 +177,26 @@ fun SystemButton(
     enabled: Boolean = true,
     icon: ImageVector? = null
 ) {
-    val shape = CutCornerAngularShape(10f)
-    val alpha = if (enabled) 1f else 0.35f
+    val shape = RoundedCornerShape(50)
+    val alpha = if (enabled) 1f else 0.5f
     Row(
         modifier = modifier
+            .shadow(
+                elevation = if (enabled) 8.dp else 0.dp,
+                shape = shape,
+                spotColor = accent.copy(alpha = 0.5f)
+            )
             .clip(shape)
-            .background(accent.copy(alpha = 0.10f * alpha))
-            .border(BorderStroke(1.dp, accent.copy(alpha = 0.7f * alpha)), shape)
+            .background(
+                Brush.horizontalGradient(
+                    listOf(
+                        accent.copy(alpha = alpha),
+                        accent.copy(alpha = alpha * 0.8f)
+                    )
+                )
+            )
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = 24.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -211,7 +206,7 @@ fun SystemButton(
         }
         Text(
             text.uppercase(),
-            color = accent.copy(alpha = alpha),
+            color = Color.White,
             fontWeight = FontWeight.Bold,
             fontSize = 13.sp,
             letterSpacing = 1.5.sp,
@@ -228,12 +223,13 @@ fun SystemChip(
     accent: Color = SparkColors.Cyan,
     filled: Boolean = false
 ) {
+    val shape = RoundedCornerShape(8.dp)
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(3.dp))
-            .background(if (filled) accent.copy(alpha = 0.9f) else accent.copy(alpha = 0.08f))
-            .border(1.dp, accent.copy(alpha = 0.4f), RoundedCornerShape(3.dp))
-            .padding(horizontal = 8.dp, vertical = 3.dp)
+            .clip(shape)
+            .background(if (filled) accent else accent.copy(alpha = 0.1f))
+            .border(1.dp, if (filled) Color.Transparent else accent.copy(alpha = 0.2f), shape)
+            .padding(horizontal = 10.dp, vertical = 4.dp)
     ) {
         Text(
             text.uppercase(),

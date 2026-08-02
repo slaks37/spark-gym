@@ -24,6 +24,7 @@ sealed class Destination(val route: String) {
     data object Nutrition : Destination("nutrition")
     data object Connect : Destination("connect")
     data object Profile : Destination("profile")
+    data object ProgressPhotos : Destination("progress-photos")
     data object Onboarding : Destination("onboarding")
     data object Achievements : Destination("achievements")
 
@@ -45,6 +46,11 @@ sealed class Destination(val route: String) {
     data object FoodSearch : Destination("food/{meal}") {
         fun of(meal: String) = "food/$meal"
         const val ARG = "meal"
+    }
+
+    data object ShareWorkout : Destination("share/{sessionId}") {
+        fun of(sessionId: Long) = "share/$sessionId"
+        const val ARG = "sessionId"
     }
 }
 

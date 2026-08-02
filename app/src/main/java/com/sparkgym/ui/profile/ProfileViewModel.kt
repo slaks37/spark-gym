@@ -20,6 +20,9 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
     val hunter = container.gameRepository.observeProfile()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    val photos = container.workoutRepository.observeProgressPhotos()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     fun save(
         name: String,
         sex: EnergyMath.Sex,
@@ -73,5 +76,27 @@ class ProfileViewModel(private val container: AppContainer) : ViewModel() {
 
     fun setLanguage(language: AppLanguage) {
         viewModelScope.launch { container.prefs.update { it.copy(language = language) } }
+    }
+
+    fun setAvatar(path: String?) {
+        viewModelScope.launch { container.prefs.update { it.copy(avatarPath = path) } }
+    }
+
+    fun addProgressPhoto(uri: String, weightKg: Double, dateEpochDay: Long) {
+        viewModelScope.launch {
+            container.workoutRepository.saveProgressPhoto(
+                com.sparkgym.data.local.ProgressPhotoEntity(
+                    dateEpochDay = dateEpochDay,
+                    weightKg = weightKg,
+                    imageUri = uri
+                )
+            )
+        }
+    }
+
+    fun deleteProgressPhoto(id: Long) {
+        viewModelScope.launch {
+            container.workoutRepository.deleteProgressPhoto(id)
+        }
     }
 }

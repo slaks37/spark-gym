@@ -60,7 +60,7 @@ class SystemCoordinator(
 
     /** After a set is logged, keep the set-count quest honest. */
     suspend fun onSetLogged(sessionId: Long) {
-        val sets = workouts.observeSets(sessionId).first().count { it.isCompleted && !it.isWarmup }
+        val sets = workouts.observeSets(sessionId).first().count { it.isCompleted && it.setType != com.sparkgym.domain.model.SetType.WARMUP }
         game.setQuestProgress(QuestMetric.WORKOUT_SETS, sets.toDouble())
     }
 

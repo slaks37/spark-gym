@@ -42,7 +42,9 @@ fun SystemMessageDialog(
     lines: List<String>,
     onDismiss: () -> Unit,
     accent: Color = SparkColors.Cyan,
-    confirmText: String = "Acknowledge"
+    confirmText: String = "Acknowledge",
+    secondaryText: String? = null,
+    onSecondaryAction: (() -> Unit)? = null
 ) {
     Dialog(onDismissRequest = onDismiss) {
         SystemPanel(accent = accent, modifier = Modifier.fillMaxWidth()) {
@@ -57,7 +59,12 @@ fun SystemMessageDialog(
                 Spacer(Modifier.height(4.dp))
             }
             Spacer(Modifier.height(16.dp))
-            SystemButton(confirmText, onDismiss, accent = accent, modifier = Modifier.fillMaxWidth())
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (secondaryText != null && onSecondaryAction != null) {
+                    SystemButton(secondaryText, onSecondaryAction, accent = SparkColors.Violet, modifier = Modifier.weight(1f))
+                }
+                SystemButton(confirmText, onDismiss, accent = accent, modifier = if (secondaryText != null) Modifier.weight(1f) else Modifier.fillMaxWidth())
+            }
         }
     }
 }

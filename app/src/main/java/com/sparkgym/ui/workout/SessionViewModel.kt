@@ -28,7 +28,8 @@ class SessionViewModel(private val container: AppContainer) : ViewModel() {
         val exercise: ExerciseEntity,
         val sets: List<SetLogEntity>,
         val lastTime: List<SetLogEntity>,
-        val bestEstimated1Rm: Double
+        val bestEstimated1Rm: Double,
+        val supersetId: String? = null
     ) {
         val completedSets get() = sets.count { it.isCompleted }
     }
@@ -131,7 +132,8 @@ class SessionViewModel(private val container: AppContainer) : ViewModel() {
                     sets = rows.sortedBy { it.setNumber },
                     lastTime = container.workoutRepository.lastPerformance(exerciseId),
                     bestEstimated1Rm = container.workoutRepository.observePersonalRecords().first()
-                        .firstOrNull { it.exerciseId == exerciseId }?.bestEstimated1RmKg ?: 0.0
+                        .firstOrNull { it.exerciseId == exerciseId }?.bestEstimated1RmKg ?: 0.0,
+                    supersetId = rows.firstOrNull()?.supersetId
                 )
             }
 
@@ -149,7 +151,22 @@ class SessionViewModel(private val container: AppContainer) : ViewModel() {
                 val name = _state.value.blocks.firstOrNull { it.exercise.id == set.exerciseId }?.exercise?.name
                 _prFlash.value = name?.let { "New record — $it" }
             }
-            startRest(restSeconds)
+            
+            val isLastInSuperset = if (set.supersetId == null) {
+                true
+            } else {
+                val blockIndex = _state.value.blocks.indexOfFirst { it.exercise.id == set.exerciseId }
+                if (blockIndex == -1 || blockIndex == _state.value.blocks.lastIndex) {
+                    true
+                } else {
+                    val nextBlock = _state.value.blocks[blockIndex + 1]
+                    nextBlock.supersetId != set.supersetId
+                }
+            }
+
+            if (isLastInSuperset) {
+                startRest(restSeconds)
+            }
         }
     }
 

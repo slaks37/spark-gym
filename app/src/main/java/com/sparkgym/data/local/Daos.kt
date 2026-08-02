@@ -10,6 +10,18 @@ import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+interface ProgressPhotoDao {
+    @Query("SELECT * FROM progress_photos ORDER BY dateEpochDay DESC")
+    fun observePhotos(): Flow<List<ProgressPhotoEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPhoto(photo: ProgressPhotoEntity): Long
+
+    @Query("DELETE FROM progress_photos WHERE id = :id")
+    suspend fun deletePhoto(id: Long)
+}
+
+@Dao
 interface ExerciseDao {
 
     @Query("SELECT COUNT(*) FROM exercises")
@@ -59,6 +71,12 @@ interface RoutineDao {
 
     @Query("SELECT COUNT(*) FROM routines")
     suspend fun count(): Int
+
+    @Query("SELECT * FROM routine_folders ORDER BY name")
+    fun observeFolders(): Flow<List<RoutineFolderEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertFolder(folder: RoutineFolderEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRoutine(routine: RoutineEntity): Long
@@ -167,7 +185,7 @@ interface WorkoutDao {
         """
         SELECT s.* FROM set_logs s
         JOIN workout_sessions w ON w.id = s.sessionId
-        WHERE s.exerciseId = :exerciseId AND s.isCompleted = 1 AND s.isWarmup = 0
+        WHERE s.exerciseId = :exerciseId AND s.isCompleted = 1 AND s.setType != 'WARMUP'
           AND w.finishedAt IS NOT NULL
         ORDER BY w.startedAt DESC, s.setNumber ASC
         LIMIT :limit
@@ -203,7 +221,7 @@ interface WorkoutDao {
         FROM set_logs s
         JOIN workout_sessions w ON w.id = s.sessionId
         JOIN exercise_muscles em ON em.exerciseId = s.exerciseId
-        WHERE s.isCompleted = 1 AND s.isWarmup = 0
+        WHERE s.isCompleted = 1 AND s.setType != 'WARMUP'
           AND w.dateEpochDay BETWEEN :fromDay AND :toDay
         GROUP BY em.muscle
         """
@@ -216,7 +234,7 @@ interface WorkoutDao {
                COALESCE(SUM(s.weightKg * s.reps), 0) AS volumeKg,
                COUNT(s.id) AS sets
         FROM workout_sessions w
-        LEFT JOIN set_logs s ON s.sessionId = w.id AND s.isCompleted = 1 AND s.isWarmup = 0
+        LEFT JOIN set_logs s ON s.sessionId = w.id AND s.isCompleted = 1 AND s.setType != 'WARMUP'
         WHERE w.dateEpochDay BETWEEN :fromDay AND :toDay AND w.finishedAt IS NOT NULL
         GROUP BY w.dateEpochDay
         ORDER BY w.dateEpochDay
@@ -241,7 +259,7 @@ interface WorkoutDao {
                COUNT(s.id) AS sets
         FROM set_logs s
         JOIN workout_sessions w ON w.id = s.sessionId
-        WHERE s.exerciseId = :exerciseId AND s.isCompleted = 1 AND s.isWarmup = 0
+        WHERE s.exerciseId = :exerciseId AND s.isCompleted = 1 AND s.setType != 'WARMUP'
           AND s.weightKg > 0 AND s.reps > 0 AND w.finishedAt IS NOT NULL
         GROUP BY w.id
         ORDER BY w.startedAt ASC
@@ -252,9 +270,46 @@ interface WorkoutDao {
 
     @Query(
         """
+        SELECT w.dateEpochDay AS dateEpochDay,
+               COALESCE(SUM(s.weightKg * s.reps), 0) AS volumeKg,
+               COUNT(s.id) AS sets
+        FROM set_logs s
+        JOIN workout_sessions w ON w.id = s.sessionId
+        WHERE s.exerciseId = :exerciseId AND s.isCompleted = 1 AND s.setType != 'WARMUP'
+          AND w.finishedAt IS NOT NULL
+        GROUP BY w.id
+        ORDER BY w.startedAt ASC
+        LIMIT :limit
+        """
+    )
+    suspend fun volumePoints(exerciseId: Long, limit: Int = 20): List<VolumePointRow>
+
+    // We use a flat class to join the session data we need.
+    @Query(
+        """
+        SELECT w.id AS sessionId,
+               w.dateEpochDay AS dateEpochDay,
+               w.name AS sessionName,
+               s.setNumber AS setNumber,
+               s.weightKg AS weightKg,
+               s.reps AS reps,
+               s.setType AS setType,
+               s.isPersonalRecord AS isPersonalRecord
+        FROM set_logs s
+        JOIN workout_sessions w ON w.id = s.sessionId
+        WHERE s.exerciseId = :exerciseId AND s.isCompleted = 1
+          AND w.finishedAt IS NOT NULL
+        ORDER BY w.startedAt DESC, s.setNumber ASC
+        LIMIT :limit
+        """
+    )
+    suspend fun exerciseHistorySets(exerciseId: Long, limit: Int = 200): List<com.sparkgym.domain.model.ExerciseHistoryRow>
+
+    @Query(
+        """
         SELECT s.exerciseId FROM set_logs s
         JOIN workout_sessions w ON w.id = s.sessionId
-        WHERE s.isCompleted = 1 AND s.isWarmup = 0 AND s.weightKg > 0
+        WHERE s.isCompleted = 1 AND s.setType != 'WARMUP' AND s.weightKg > 0
           AND w.finishedAt IS NOT NULL
         GROUP BY s.exerciseId
         HAVING COUNT(DISTINCT w.id) >= 4

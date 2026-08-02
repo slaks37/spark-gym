@@ -114,6 +114,7 @@ fun SparkNavHost(
                     val vm: HunterViewModel = viewModel(factory = factory)
                     StatusScreen(
                         viewModel = vm,
+                        profileFlow = container.prefs.profile,
                         onOpenAchievements = { navController.navigate(Destination.Achievements.route) },
                         onOpenProfile = { navController.navigate(Destination.Profile.route) },
                         onOpenConnect = { navController.navigate(Destination.Connect.route) },
@@ -209,7 +210,21 @@ fun SparkNavHost(
                         viewModel = vm,
                         workoutViewModel = workoutVm,
                         sessionId = sessionId,
-                        onExit = { navController.popBackStack() }
+                        onExit = { navController.popBackStack() },
+                        onShareWorkout = { id -> navController.navigate(Destination.ShareWorkout.of(id)) }
+                    )
+                }
+
+                composable(
+                    route = Destination.ShareWorkout.route,
+                    arguments = listOf(navArgument(Destination.ShareWorkout.ARG) { type = NavType.LongType })
+                ) { entry ->
+                    val sessionId = entry.arguments?.getLong(Destination.ShareWorkout.ARG) ?: 0L
+                    val vm: SessionViewModel = viewModel(factory = factory)
+                    com.sparkgym.ui.workout.ShareWorkoutScreen(
+                        viewModel = vm,
+                        sessionId = sessionId,
+                        onBack = { navController.popBackStack() }
                     )
                 }
 
@@ -254,7 +269,16 @@ fun SparkNavHost(
                     ProfileScreen(
                         viewModel = vm,
                         onBack = { navController.popBackStack() },
-                        onOpenConnect = { navController.navigate(Destination.Connect.route) }
+                        onOpenConnect = { navController.navigate(Destination.Connect.route) },
+                        onOpenProgressPhotos = { navController.navigate(Destination.ProgressPhotos.route) }
+                    )
+                }
+
+                composable(Destination.ProgressPhotos.route) {
+                    val vm: ProfileViewModel = viewModel(factory = factory)
+                    com.sparkgym.ui.profile.ProgressPhotosScreen(
+                        viewModel = vm,
+                        onBack = { navController.popBackStack() }
                     )
                 }
             }

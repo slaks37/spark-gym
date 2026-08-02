@@ -42,6 +42,7 @@ import com.sparkgym.core.design.SparkColors
 import com.sparkgym.core.design.SystemChip
 import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.design.SystemPanel
+import com.sparkgym.core.util.S
 import com.sparkgym.domain.engine.CoachEngine
 import kotlin.math.roundToInt
 
@@ -70,9 +71,9 @@ fun CoachScreen(viewModel: CoachViewModel) {
                     )
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text("COACH", style = SystemLabel.copy(color = SparkColors.Cyan))
+                        Text(S.coach.uppercase(), style = SystemLabel.copy(color = SparkColors.Cyan))
                         Text(
-                            "Your data, read back to you",
+                            S.yourDataReadBackToYou,
                             style = MaterialTheme.typography.titleMedium,
                             color = SparkColors.TextPrimary
                         )
@@ -95,7 +96,7 @@ fun CoachScreen(viewModel: CoachViewModel) {
 
         item {
             SystemPanel(accent = SparkColors.Cyan) {
-                Text("HEADLINE", style = SystemLabel.copy(color = SparkColors.Cyan))
+                Text(S.headline, style = SystemLabel.copy(color = SparkColors.Cyan))
                 Spacer(Modifier.height(6.dp))
                 Text(
                     state.headline,
@@ -113,7 +114,7 @@ fun CoachScreen(viewModel: CoachViewModel) {
             if (verdict.score > 0) {
                 item {
                     SystemPanel(
-                        title = "Fatigue index",
+                        title = S.fatigueIndex,
                         accent = if (verdict.recommended) SparkColors.Danger else SparkColors.Amber
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -131,8 +132,8 @@ fun CoachScreen(viewModel: CoachViewModel) {
                                 )
                                 Spacer(Modifier.height(6.dp))
                                 Text(
-                                    if (verdict.recommended) "Deload recommended"
-                                    else "Accumulating — worth watching",
+                                    if (verdict.recommended) S.deloadRecommended
+                                    else S.accumulatingWorthWatching,
                                     style = SystemLabel,
                                     color = SparkColors.TextMuted
                                 )
@@ -157,7 +158,7 @@ fun CoachScreen(viewModel: CoachViewModel) {
         if (state.actionable.isNotEmpty()) {
             item {
                 Text(
-                    "WHAT TO CHANGE",
+                    S.whatToChange,
                     style = SystemLabel.copy(color = SparkColors.TextSecondary),
                     modifier = Modifier.padding(top = 6.dp)
                 )
@@ -170,7 +171,7 @@ fun CoachScreen(viewModel: CoachViewModel) {
         if (state.wins.isNotEmpty()) {
             item {
                 Text(
-                    "WHAT IS WORKING",
+                    S.whatIsWorking,
                     style = SystemLabel.copy(color = SparkColors.Success),
                     modifier = Modifier.padding(top = 6.dp)
                 )
@@ -182,8 +183,7 @@ fun CoachScreen(viewModel: CoachViewModel) {
 
         item {
             Text(
-                "Every line above is a rule over your own logged data — no guessing, no black box. " +
-                    "Tap refresh after a session to re-run the analysis.",
+                S.coachDisclaimer,
                 style = MaterialTheme.typography.bodySmall,
                 color = SparkColors.TextMuted,
                 modifier = Modifier.padding(vertical = 12.dp)
@@ -194,26 +194,26 @@ fun CoachScreen(viewModel: CoachViewModel) {
 
 @Composable
 private fun WeekSummary(snap: CoachEngine.Snapshot) {
-    SystemPanel(title = "This week", accent = SparkColors.Violet) {
+    SystemPanel(title = S.thisWeek, accent = SparkColors.Violet) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Metric("${snap.sessionsThisWeek}", "Sessions")
-            Metric("${snap.weeklyEffectiveSets.roundToInt()}", "Eff. sets")
+            Metric("${snap.sessionsThisWeek}", S.sessions)
+            Metric("${snap.weeklyEffectiveSets.roundToInt()}", S.effSets)
             Metric(
                 if (snap.avgDailySteps > 0) "${(snap.avgDailySteps / 1000).roundToInt()}k" else "—",
-                "Steps/day"
+                S.stepsPerDay
             )
             Metric(
                 if (snap.avgSleepMinutes > 0) "${(snap.avgSleepMinutes / 60).roundToInt()}h" else "—",
-                "Sleep"
+                S.sleep
             )
-            Metric("${snap.daysLoggedThisWeek}/7", "Food")
+            Metric("${snap.daysLoggedThisWeek}/7", S.food)
         }
         if (snap.weightTrendKgPerWeek != null) {
             Spacer(Modifier.height(12.dp))
             val trend = snap.weightTrendKgPerWeek
             Text(
-                "Bodyweight trending ${if (trend >= 0) "+" else "−"}" +
-                    String.format(java.util.Locale.US, "%.2f", kotlin.math.abs(trend)) + " kg per week",
+                "${S.bodyweightTrending} ${if (trend >= 0) "+" else "−"}" +
+                    String.format(java.util.Locale.US, "%.2f", kotlin.math.abs(trend)) + " kg ${S.perWeek}",
                 style = MaterialTheme.typography.bodySmall,
                 color = SparkColors.TextSecondary
             )

@@ -1,5 +1,6 @@
 package com.sparkgym.ui.workout
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,12 +12,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -25,15 +25,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.sparkgym.R
 import com.sparkgym.core.design.SparkColors
 import com.sparkgym.core.design.SystemChip
 import com.sparkgym.core.design.SystemLabel
@@ -41,22 +45,14 @@ import com.sparkgym.core.design.SystemPanel
 import com.sparkgym.core.util.Dates
 import com.sparkgym.core.util.S
 import com.sparkgym.data.local.SetLogEntity
-import com.sparkgym.data.seed.StretchSeed
 import com.sparkgym.di.AppContainer
+import com.sparkgym.domain.engine.HeatmapEngine
 import com.sparkgym.domain.engine.StrengthMath
 import com.sparkgym.domain.model.Muscle
-import com.sparkgym.ui.common.MuscleDot
-import com.sparkgym.ui.common.equipmentIcon
-import com.sparkgym.ui.common.muscleGroupColor
-import com.sparkgym.ui.heatmap.MuscleThumb
+import com.sparkgym.ui.heatmap.MuscleHeatMap
 
 /**
- * Exercise reference page.
- *
- * Picture first: a large anatomical diagram of what the movement trains, then
- * the coaching cue broken into numbered steps, then your own numbers. The
- * previous version led with two grey paragraphs, which is the wrong shape for
- * something you read between sets.
+ * Exercise reference page: highly aesthetic hero layout, details, and history.
  */
 @Composable
 fun ExerciseDetailScreen(
@@ -67,161 +63,185 @@ fun ExerciseDetailScreen(
     val detail by container.workoutRepository.observeExercise(exerciseId)
         .collectAsState(initial = null)
 
-    var recent by remember { mutableStateOf<List<SetLogEntity>>(emptyList()) }
+    var historySets by remember { mutableStateOf<List<com.sparkgym.domain.model.ExerciseHistoryRow>>(emptyList()) }
+    var estimatedMaxHistory by remember { mutableStateOf<List<com.sparkgym.data.local.VolumePointRow>>(emptyList()) }
+    var volumePoints by remember { mutableStateOf<List<com.sparkgym.data.local.VolumePointRow>>(emptyList()) }
+    
     LaunchedEffect(exerciseId) {
-        recent = container.workoutRepository.lastPerformance(exerciseId)
+        historySets = container.workoutRepository.getExerciseHistorySets(exerciseId)
+        estimatedMaxHistory = container.workoutRepository.getEstimatedMaxHistory(exerciseId)
+        volumePoints = container.workoutRepository.getVolumePoints(exerciseId)
     }
 
     val exercise = detail?.exercise
-    val primary = detail?.muscles.orEmpty()
-        .filter { it.contribution >= 1f }.mapNotNull { Muscle.fromKey(it.muscle) }.toSet()
-    val secondary = detail?.muscles.orEmpty()
-        .filter { it.contribution < 1f }.mapNotNull { Muscle.fromKey(it.muscle) }.toSet()
-    val accent = primary.firstOrNull()?.let { muscleGroupColor(it.group) } ?: SparkColors.Cyan
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().background(SparkColors.Void),
-        contentPadding = PaddingValues(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // ---- Hero: the diagram is the headline, not a caption ----
-        item {
+    Box(modifier = Modifier.fillMaxSize().background(SparkColors.Void)) {
+        // Hero Image Background
+        Box(modifier = Modifier.fillMaxWidth().height(320.dp)) {
+            val primaryMuscleKey = detail?.muscles
+                ?.filter { it.contribution >= 1f }
+                ?.mapNotNull { Muscle.fromKey(it.muscle) }
+                ?.firstOrNull()
+                
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val exerciseName = detail?.exercise?.name ?: ""
+            val iconName = "ex_" + exerciseName.lowercase().replace(" ", "_").replace("-", "_")
+            val specificResId = context.resources.getIdentifier(iconName, "drawable", context.packageName)
+                
+            val imageResId = if (specificResId != 0) {
+                specificResId
+            } else when {
+                detail?.exercise?.equipment == com.sparkgym.domain.model.Equipment.CARDIO -> R.drawable.gym_hiit_runner
+                else -> when (primaryMuscleKey) {
+                    Muscle.CHEST -> R.drawable.exercise_dumbbell_flys
+                    Muscle.TRICEPS -> R.drawable.muscle_triceps
+                    Muscle.FOREARMS -> R.drawable.muscle_forearms
+                    Muscle.FRONT_DELTS, Muscle.SIDE_DELTS -> R.drawable.muscle_shoulders
+                    Muscle.LATS -> R.drawable.muscle_lats
+                    Muscle.TRAPS -> R.drawable.muscle_traps
+                    Muscle.LOWER_BACK, Muscle.REAR_DELTS -> R.drawable.muscle_lower_back
+                    Muscle.HAMSTRINGS -> R.drawable.muscle_hamstrings
+                    Muscle.GLUTES -> R.drawable.muscle_glutes
+                    Muscle.CALVES -> R.drawable.muscle_calves
+                    Muscle.QUADS, Muscle.ADDUCTORS, Muscle.ABDUCTORS -> R.drawable.gym_squat_athlete
+                    Muscle.BICEPS -> R.drawable.exercise_preacher_curls
+                    Muscle.ABS -> R.drawable.gym_pushup_athlete
+                    Muscle.OBLIQUES -> R.drawable.muscle_obliques
+                    Muscle.NECK -> R.drawable.muscle_neck
+                    else -> R.drawable.tool_dumbbells_rack
+                }
+            }
+            
+            Image(
+                painter = painterResource(id = imageResId),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+            // Gradient Overlay for smooth transition
             Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(230.dp)
-                    .background(accent.copy(alpha = 0.08f))
-            ) {
-                IconButton(onClick = onBack, modifier = Modifier.padding(4.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, S.back, tint = SparkColors.TextPrimary)
-                }
-                MuscleThumb(
-                    primary = primary,
-                    secondary = secondary,
-                    modifier = Modifier.align(Alignment.Center).height(190.dp),
-                    primaryColor = accent
-                )
-                exercise?.let { e ->
-                    Row(
-                        Modifier.align(Alignment.BottomEnd).padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            equipmentIcon(e.equipment),
-                            contentDescription = e.equipment.displayName,
-                            tint = accent,
-                            modifier = Modifier.size(18.dp)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, SparkColors.Void),
+                            startY = 300f
                         )
-                        SystemChip(e.difficulty.displayName, accent = SparkColors.Amber)
-                    }
-                }
-            }
-        }
-
-        exercise?.let { e ->
-            item {
-                Column(Modifier.padding(horizontal = 16.dp)) {
-                    Text(
-                        e.name,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = SparkColors.TextPrimary
                     )
-                    Spacer(Modifier.height(8.dp))
-                    LegendRow(accent)
-                }
-            }
-
-            // ---- What it trains, as tags rather than prose ----
-            item {
-                Column(Modifier.padding(horizontal = 16.dp)) {
-                    Text(S.primaryMuscles, style = SystemLabel.copy(color = accent))
-                    Spacer(Modifier.height(6.dp))
-                    WrapRow(primary.toList())
-                    if (secondary.isNotEmpty()) {
-                        Spacer(Modifier.height(10.dp))
-                        Text(S.secondaryMuscles, style = SystemLabel)
-                        Spacer(Modifier.height(6.dp))
-                        WrapRow(secondary.toList())
-                    }
-                }
-            }
-
-            // ---- The cue, split into steps ----
-            item {
-                Column(Modifier.padding(horizontal = 16.dp)) {
-                    SystemPanel(title = S.howTo, accent = accent) {
-                        e.instructions
-                            .split(". ")
-                            .map { it.trim().trimEnd('.') }
-                            .filter { it.isNotBlank() }
-                            .forEachIndexed { index, step ->
-                                Row(
-                                    Modifier.padding(vertical = 5.dp),
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Box(
-                                        Modifier
-                                            .size(20.dp)
-                                            .clip(CircleShape)
-                                            .background(accent.copy(alpha = 0.15f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            "${index + 1}",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = accent,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                    Spacer(Modifier.width(10.dp))
-                                    Text(
-                                        step,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = SparkColors.TextSecondary
-                                    )
-                                }
-                            }
-                    }
+            )
+            
+            // Top Bar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 40.dp, start = 8.dp, end = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.Filled.ArrowBack, "Back", tint = Color.White)
                 }
             }
         }
 
-        // ---- What to stretch afterwards ----
-        val stretches = StretchSeed.forExercise(primary, secondary).take(3)
-        if (stretches.isNotEmpty()) {
+        // Content
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = 220.dp, bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             item {
-                Column(Modifier.padding(horizontal = 16.dp)) {
-                    SystemPanel(title = S.stretchAfter, accent = SparkColors.Success) {
-                        Text(
-                            S.stretchWhy,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = SparkColors.TextMuted
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                ) {
+                    Text(
+                        S.exercise,
+                        style = SystemLabel.copy(color = SparkColors.Cyan),
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    Text(
+                        exercise?.name ?: "",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            color = SparkColors.TextPrimary,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold
                         )
-                        Spacer(Modifier.height(10.dp))
-                        stretches.forEach { st ->
-                            Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.Top) {
-                                Box(
-                                    Modifier
-                                        .size(width = 4.dp, height = 34.dp)
-                                        .background(muscleGroupColor(st.muscle.group))
+                    )
+                    
+                    Spacer(Modifier.height(12.dp))
+
+                    exercise?.let { e ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            SystemChip(e.equipment.displayName, accent = SparkColors.Violet, filled = true)
+                            SystemChip(e.difficulty.displayName, accent = SparkColors.Amber, filled = true)
+                            SystemChip(e.force.name.lowercase(), accent = SparkColors.TextSecondary)
+                        }
+                    }
+                }
+            }
+
+            exercise?.let { e ->
+                item {
+                    SystemPanel(
+                        title = S.howTo, 
+                        accent = SparkColors.Cyan,
+                        modifier = Modifier.padding(horizontal = 20.dp)
+                    ) {
+                        Text(
+                            e.instructions,
+                            color = SparkColors.TextSecondary,
+                            style = MaterialTheme.typography.bodyLarge,
+                            lineHeight = 24.sp
+                        )
+                    }
+                }
+            }
+
+            detail?.let { withMuscles ->
+                item {
+                    val synthetic = withMuscles.muscles.mapNotNull { link ->
+                        Muscle.fromKey(link.muscle)?.let { muscle ->
+                            muscle to HeatmapEngine.MuscleHeat(
+                                muscle = muscle,
+                                effectiveSets = 0.0,
+                                volumeKg = 0.0,
+                                target = 1.0,
+                                intensity = if (link.contribution >= 1f) 1.0f else 0.5f,
+                                status = HeatmapEngine.Status.OPTIMAL
+                            )
+                        }
+                    }.toMap()
+
+                    SystemPanel(
+                        title = S.musclesWorked, 
+                        accent = SparkColors.Violet,
+                        modifier = Modifier.padding(horizontal = 20.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            MuscleHeatMap(synthetic, isFront = true, modifier = Modifier.height(190.dp))
+                            MuscleHeatMap(synthetic, isFront = false, modifier = Modifier.height(190.dp))
+                            Spacer(Modifier.width(16.dp))
+                            Column(Modifier.weight(1f)) {
+                                val primaryList = withMuscles.muscles.filter { it.contribution >= 1f }
+                                    .mapNotNull { Muscle.fromKey(it.muscle)?.displayName }
+                                val secondaryList = withMuscles.muscles.filter { it.contribution < 1f }
+                                    .mapNotNull { Muscle.fromKey(it.muscle)?.displayName }
+                                
+                                Text(S.primary, style = SystemLabel.copy(color = SparkColors.Danger))
+                                Text(
+                                    primaryList.joinToString(", "),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = SparkColors.TextPrimary,
+                                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
                                 )
-                                Spacer(Modifier.width(10.dp))
-                                Column(Modifier.weight(1f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            S.stretchName(st),
-                                            style = MaterialTheme.typography.titleSmall,
-                                            color = SparkColors.TextPrimary
-                                        )
-                                        Spacer(Modifier.width(8.dp))
-                                        SystemChip("${st.holdSeconds}s", accent = SparkColors.Success)
-                                    }
-                                    Spacer(Modifier.height(3.dp))
+                                
+                                if (secondaryList.isNotEmpty()) {
+                                    Text(S.secondary, style = SystemLabel.copy(color = SparkColors.TextMuted))
                                     Text(
-                                        S.stretchHowTo(st),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = SparkColors.TextSecondary
+                                        secondaryList.joinToString(", "),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = SparkColors.TextSecondary,
+                                        modifier = Modifier.padding(top = 4.dp)
                                     )
                                 }
                             }
@@ -229,66 +249,13 @@ fun ExerciseDetailScreen(
                     }
                 }
             }
-        }
 
-        if (recent.isNotEmpty()) {
             item {
-                Column(Modifier.padding(horizontal = 16.dp)) {
-                    SystemPanel(title = S.recentSets, accent = SparkColors.Success) {
-                        recent.take(6).forEach { set ->
-                            Row(
-                                Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    "${set.weightKg.toInt()} kg × ${set.reps}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = SparkColors.TextPrimary
-                                )
-                                Text(
-                                    "e1RM ${StrengthMath.estimatedOneRepMax(set.weightKg, set.reps).toInt()}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = SparkColors.Cyan
-                                )
-                                Text(
-                                    set.completedAt?.let { Dates.pretty(Dates.epochDay(it)) } ?: "",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = SparkColors.TextMuted
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/** Explains the two fill colours on the diagram above, in four words. */
-@Composable
-private fun LegendRow(accent: Color) {
-    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-        LegendDot(accent, S.primaryMuscles)
-        LegendDot(SparkColors.Amber, S.secondaryMuscles)
-    }
-}
-
-@Composable
-private fun LegendDot(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(9.dp).clip(CircleShape).background(color))
-        Spacer(Modifier.width(5.dp))
-        Text(label, style = SystemLabel, color = SparkColors.TextMuted)
-    }
-}
-
-/** Muscle tags that wrap onto as many rows as they need. */
-@Composable
-private fun WrapRow(muscles: List<Muscle>) {
-    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-        muscles.chunked(3).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                row.forEach { MuscleDot(it) }
+                ExerciseHistoryView(
+                    history = historySets,
+                    estimatedMaxHistory = estimatedMaxHistory,
+                    volumePoints = volumePoints
+                )
             }
         }
     }

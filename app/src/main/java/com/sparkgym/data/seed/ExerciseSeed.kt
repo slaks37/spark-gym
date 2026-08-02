@@ -15,7 +15,8 @@ data class SeedExercise(
     val tracking: Track,
     val primary: List<Muscle>,
     val secondary: List<Muscle> = emptyList(),
-    val instructions: String
+    val instructions: String,
+    val imageUri: String? = null
 )
 
 /**
@@ -39,7 +40,8 @@ object ExerciseSeed {
             "barbell-bench-press", "Barbell Bench Press", Equipment.BARBELL, Force.PUSH,
             Diff.INTERMEDIATE, Track.WEIGHT_REPS,
             listOf(Muscle.CHEST), listOf(Muscle.FRONT_DELTS, Muscle.TRICEPS),
-            "Retract the shoulder blades, lower the bar to mid-chest under control, drive back to lockout without flaring the elbows past 60 degrees."
+            "Retract the shoulder blades, lower the bar to mid-chest under control, drive back to lockout without flaring the elbows past 60 degrees.",
+            imageUri = "file:///C:/Users/Stefen/.gemini/antigravity-ide/brain/2ebfdfb0-91e6-42a5-b48e-5c6818678cf6/ex_barbell_bench_press_1785630550901.png"
         ),
         SeedExercise(
             "incline-barbell-press", "Incline Barbell Press", Equipment.BARBELL, Force.PUSH,

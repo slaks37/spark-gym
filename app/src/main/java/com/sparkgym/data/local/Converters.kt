@@ -7,6 +7,7 @@ import com.sparkgym.domain.model.ExerciseForce
 import com.sparkgym.domain.model.HunterClass
 import com.sparkgym.domain.model.QuestMetric
 import com.sparkgym.domain.model.QuestSource
+import com.sparkgym.domain.model.SetType
 import com.sparkgym.domain.model.TrackingType
 
 /**
@@ -41,4 +42,8 @@ class Converters {
     @TypeConverter fun hunterClassToString(v: HunterClass): String = v.name
     @TypeConverter fun stringToHunterClass(v: String): HunterClass =
         runCatching { HunterClass.valueOf(v) }.getOrDefault(HunterClass.AWAKENED)
+
+    @TypeConverter fun setTypeToString(v: SetType): String = v.name
+    @TypeConverter fun stringToSetType(v: String): SetType =
+        runCatching { SetType.valueOf(v) }.getOrDefault(SetType.NORMAL)
 }

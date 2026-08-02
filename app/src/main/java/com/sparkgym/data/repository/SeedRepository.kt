@@ -101,7 +101,8 @@ class SeedRepository(private val db: SparkGymDatabase) {
                     difficulty = seed.difficulty,
                     tracking = seed.tracking,
                     instructions = seed.instructions,
-                    mediaQuery = "${seed.name} proper form"
+                    mediaQuery = "${seed.name} proper form",
+                    imageUri = seed.imageUri
                 )
             )
             val links = seed.primary.map { ExerciseMuscleEntity(id, it.name, PRIMARY_CONTRIBUTION) } +

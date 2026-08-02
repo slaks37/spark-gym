@@ -14,9 +14,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,8 +30,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.graphics.BitmapFactory
+import java.io.File
+import kotlinx.coroutines.launch
+import com.sparkgym.core.util.ImageUtils
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,7 +65,8 @@ import kotlin.math.roundToInt
 fun ProfileScreen(
     viewModel: ProfileViewModel,
     onBack: () -> Unit,
-    onOpenConnect: () -> Unit
+    onOpenConnect: () -> Unit,
+    onOpenProgressPhotos: () -> Unit
 ) {
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val hunter by viewModel.hunter.collectAsStateWithLifecycle()
@@ -60,6 +78,19 @@ fun ProfileScreen(
     var sex by remember(profile.sex) { mutableStateOf(profile.sex) }
     var activity by remember(profile.activity) { mutableStateOf(profile.activity) }
     var goal by remember(profile.goal) { mutableStateOf(profile.goal) }
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val pickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val path = ImageUtils.saveAvatar(context, uri)
+                if (path != null) {
+                    viewModel.setAvatar(path)
+                }
+            }
+        }
+    }
 
     val target = profile.macroTarget
 
@@ -149,7 +180,40 @@ fun ProfileScreen(
 
         item {
             SystemPanel(title = "You") {
-                SparkTextField(name, { name = it }, "Hunter name", Modifier.fillMaxWidth())
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(CircleShape)
+                            .background(SparkColors.PanelHigh)
+                            .clickable {
+                                pickerLauncher.launch(
+                                    androidx.activity.result.PickVisualMediaRequest(
+                                        ActivityResultContracts.PickVisualMedia.ImageOnly
+                                    )
+                                )
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val avatarPath = profile.avatarPath
+                        if (avatarPath != null && File(avatarPath).exists()) {
+                            val bitmap = BitmapFactory.decodeFile(avatarPath)
+                            if (bitmap != null) {
+                                androidx.compose.foundation.Image(
+                                    bitmap = bitmap.asImageBitmap(),
+                                    contentDescription = "Avatar",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        } else {
+                            Icon(Icons.Filled.Add, "Change Avatar", tint = SparkColors.TextMuted)
+                        }
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    SparkTextField(name, { name = it }, "Hunter name", Modifier.weight(1f))
+                }
+                
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SparkTextField(age, { age = it }, "Age", Modifier.weight(1f), KeyboardType.Number)
@@ -244,11 +308,9 @@ fun ProfileScreen(
         }
 
         item {
-            SystemButton(
-                "Wearables and Health Connect",
-                onOpenConnect,
-                modifier = Modifier.fillMaxWidth()
-            )
+            SystemButton("CONNECT DEVICES", onOpenConnect, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(8.dp))
+            SystemButton("PROGRESS PHOTOS", onOpenProgressPhotos, modifier = Modifier.fillMaxWidth(), accent = SparkColors.Violet)
         }
 
         item {

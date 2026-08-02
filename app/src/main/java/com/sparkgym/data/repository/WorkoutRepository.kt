@@ -26,6 +26,7 @@ class WorkoutRepository(private val db: SparkGymDatabase) {
     private val workoutDao get() = db.workoutDao()
     private val exerciseDao get() = db.exerciseDao()
     private val routineDao get() = db.routineDao()
+    private val photoDao get() = db.progressPhotoDao()
 
     // ------------------------------------------------------------- exercises
 
@@ -66,8 +67,14 @@ class WorkoutRepository(private val db: SparkGymDatabase) {
     }
 
     // -------------------------------------------------------------- routines
+    
+    fun observeRoutineFolders(): Flow<List<com.sparkgym.data.local.RoutineFolderEntity>> =
+        routineDao.observeFolders()
 
-    suspend fun createCustomRoutine(name: String, notes: String): Long {
+    suspend fun createRoutineFolder(name: String, colorHex: String? = null): Long =
+        routineDao.insertFolder(com.sparkgym.data.local.RoutineFolderEntity(name = name, colorHex = colorHex))
+
+    suspend fun createCustomRoutine(name: String, notes: String, folderId: Long? = null): Long {
         return routineDao.insertRoutine(
             com.sparkgym.data.local.RoutineEntity(
                 slug = "custom-${System.currentTimeMillis()}",
@@ -77,7 +84,8 @@ class WorkoutRepository(private val db: SparkGymDatabase) {
                 daysPerWeek = 1,
                 level = "Custom",
                 homeFriendly = false,
-                isCustom = true
+                isCustom = true,
+                folderId = folderId
             )
         )
     }
@@ -210,7 +218,7 @@ class WorkoutRepository(private val db: SparkGymDatabase) {
     /** Saves a set and returns true when it set a new estimated-1RM record. */
     suspend fun completeSet(set: SetLogEntity): Boolean {
         val exercise = exerciseDao.byId(set.exerciseId)
-        val isPr = if (exercise != null && !set.isWarmup) checkRecord(exercise, set) else false
+        val isPr = if (exercise != null && set.setType != com.sparkgym.domain.model.SetType.WARMUP) checkRecord(exercise, set) else false
         workoutDao.updateSet(
             set.copy(
                 isCompleted = true,
@@ -403,6 +411,17 @@ class WorkoutRepository(private val db: SparkGymDatabase) {
         return ProgressionEngine.suggest(recent, repsMin, repsMax, exercise.tracking, isLowerBody)
     }
 
+    // ── Phase 2: Analytics & 1RM Tracker ──
+
+    suspend fun getEstimatedMaxHistory(exerciseId: Long, limit: Int = 12) =
+        workoutDao.estimatedMaxHistory(exerciseId, limit)
+
+    suspend fun getVolumePoints(exerciseId: Long, limit: Int = 20) =
+        workoutDao.volumePoints(exerciseId, limit)
+
+    suspend fun getExerciseHistorySets(exerciseId: Long, limit: Int = 200) =
+        workoutDao.exerciseHistorySets(exerciseId, limit)
+
     /** Consecutive days ending today (or yesterday) with a finished session. */
     suspend fun trainingStreak(): Int {
         val days = workoutDao.recentTrainingDays().toSortedSet().reversed()
@@ -421,4 +440,12 @@ class WorkoutRepository(private val db: SparkGymDatabase) {
         }
         return streak
     }
+
+    // -------------------------------------------------------- progress photos
+    
+    fun observeProgressPhotos(): Flow<List<com.sparkgym.data.local.ProgressPhotoEntity>> = photoDao.observePhotos()
+    
+    suspend fun saveProgressPhoto(photo: com.sparkgym.data.local.ProgressPhotoEntity): Long = photoDao.insertPhoto(photo)
+    
+    suspend fun deleteProgressPhoto(id: Long) = photoDao.deletePhoto(id)
 }

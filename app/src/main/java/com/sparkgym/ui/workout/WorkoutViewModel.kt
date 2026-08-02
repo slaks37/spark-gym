@@ -93,6 +93,10 @@ class WorkoutViewModel(private val container: AppContainer) : ViewModel() {
 
     // ------------------------------------------------------------ routines
 
+    val folders: StateFlow<List<com.sparkgym.data.local.RoutineFolderEntity>> =
+        container.workoutRepository.observeRoutineFolders()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     /** Gym programmes only — bodyweight circuits have their own screen. */
     val routines: StateFlow<List<RoutineEntity>> =
         container.workoutRepository.observeGymRoutines()
