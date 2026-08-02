@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sparkgym.core.design.SparkColors
+import com.sparkgym.core.design.SparkDimens
 import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemChip
 import com.sparkgym.core.design.SystemLabel
@@ -50,7 +51,7 @@ fun MealPlanScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(SparkColors.Void),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = SparkDimens.screen,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {

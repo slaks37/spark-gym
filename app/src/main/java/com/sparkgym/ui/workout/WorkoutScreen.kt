@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -45,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sparkgym.core.design.EmptyState
 import com.sparkgym.core.design.SparkColors
+import com.sparkgym.core.design.SparkDimens
 import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemChip
 import com.sparkgym.core.design.SystemLabel
@@ -78,7 +78,7 @@ fun WorkoutScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().statusBarsPadding().background(SparkColors.Void)) {
+    Column(Modifier.fillMaxSize().background(SparkColors.Void)) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             Text(S.training.uppercase(), style = SystemLabel.copy(color = SparkColors.Cyan))
             Spacer(Modifier.height(8.dp))
@@ -158,7 +158,7 @@ private fun RoutinesTab(
     val folderedRoutines = remember(routines) { routines.groupBy { it.folderId } }
 
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = SparkDimens.screen,
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
@@ -282,7 +282,7 @@ private fun LibraryTab(viewModel: WorkoutViewModel, onOpenExercise: (Long) -> Un
             EmptyState(S.noMatchFilter)
         } else {
             LazyColumn(
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                contentPadding = PaddingValues(horizontal = SparkDimens.ScreenH, vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(library, key = { it.exercise.id }) { item ->
@@ -374,7 +374,7 @@ private fun HistoryTab(viewModel: WorkoutViewModel) {
     val trend by viewModel.volumeTrend.collectAsStateWithLifecycle()
 
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = SparkDimens.screen,
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         if (trend.isNotEmpty()) {

@@ -35,6 +35,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sparkgym.core.design.SparkColors
+import com.sparkgym.core.design.SparkDimens
 import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.design.SystemPanel
@@ -82,7 +83,7 @@ fun CreateRoutineScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(SparkColors.Void),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = SparkDimens.screen,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -209,7 +210,7 @@ private fun ExercisePickerContent(
     onSelect: (Long) -> Unit
 ) {
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = SparkDimens.screen,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {

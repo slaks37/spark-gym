@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sparkgym.core.design.SegmentedBar
 import com.sparkgym.core.design.SparkColors
+import com.sparkgym.core.design.SparkDimens
 import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.design.SystemPanel
@@ -48,7 +49,7 @@ fun OnboardingScreen(viewModel: ProfileViewModel, onDone: () -> Unit) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(SparkColors.Void),
-        contentPadding = PaddingValues(20.dp),
+        contentPadding = SparkDimens.screen,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {

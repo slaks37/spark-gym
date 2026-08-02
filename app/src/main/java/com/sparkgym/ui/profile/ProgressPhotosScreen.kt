@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sparkgym.core.design.SparkColors
+import com.sparkgym.core.design.SparkDimens
 import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.util.Dates
@@ -88,7 +89,7 @@ fun ProgressPhotosScreen(
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = SparkDimens.screen,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {

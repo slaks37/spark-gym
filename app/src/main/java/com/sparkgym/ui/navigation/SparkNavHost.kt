@@ -7,7 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -74,7 +74,11 @@ fun SparkNavHost(
 
     Scaffold(
         containerColor = SparkColors.Void,
-        contentWindowInsets = WindowInsets.navigationBars,
+        // safeDrawing, not navigationBars. The old value reserved room for the
+        // bottom bar only, so with edge-to-edge on, every screen's first row ran
+        // underneath the clock and battery. safeDrawing also covers the display
+        // cutout, which navigationBars and systemBars both miss on notched phones.
+        contentWindowInsets = WindowInsets.safeDrawing,
         bottomBar = {
             AnimatedVisibility(
                 visible = showBar,

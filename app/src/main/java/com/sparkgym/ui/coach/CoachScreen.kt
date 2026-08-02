@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
@@ -39,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sparkgym.R
 import com.sparkgym.core.design.SegmentedBar
 import com.sparkgym.core.design.SparkColors
+import com.sparkgym.core.design.SparkDimens
 import com.sparkgym.core.design.SystemChip
 import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.design.SystemPanel
@@ -52,7 +54,7 @@ fun CoachScreen(viewModel: CoachViewModel) {
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(SparkColors.Void),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = SparkDimens.screen,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
@@ -61,21 +63,28 @@ fun CoachScreen(viewModel: CoachViewModel) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // weight(1f) on the text block, so a long headline wraps inside
+                // the space left over instead of being crushed by the button.
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Image(
                         painter = painterResource(id = R.drawable.ai_coach_avatar),
                         contentDescription = "AI Coach Avatar",
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(44.dp)
                             .clip(CircleShape)
                     )
                     Spacer(Modifier.width(12.dp))
-                    Column {
+                    Column(Modifier.weight(1f)) {
                         Text(S.coach.uppercase(), style = SystemLabel.copy(color = SparkColors.Cyan))
                         Text(
                             S.yourDataReadBackToYou,
                             style = MaterialTheme.typography.titleMedium,
-                            color = SparkColors.TextPrimary
+                            color = SparkColors.TextPrimary,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }

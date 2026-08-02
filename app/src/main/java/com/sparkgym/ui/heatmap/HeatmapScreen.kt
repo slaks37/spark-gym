@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sparkgym.core.design.SegmentedBar
 import com.sparkgym.core.design.SparkColors
+import com.sparkgym.core.design.SparkDimens
 import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemChip
 import com.sparkgym.core.design.SystemLabel
@@ -36,7 +37,6 @@ import com.sparkgym.domain.engine.HeatmapEngine
 import com.sparkgym.ui.common.SelectableChip
 import com.sparkgym.ui.workout.VolumeBars
 
-import androidx.compose.foundation.layout.statusBarsPadding
 
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,8 +61,8 @@ fun HeatmapScreen(viewModel: HeatmapViewModel, onOpenExercise: (Long) -> Unit = 
     val balance = HeatmapEngine.balanceScore(heat)
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().statusBarsPadding().background(SparkColors.Void),
-        contentPadding = PaddingValues(16.dp),
+        modifier = Modifier.fillMaxSize().background(SparkColors.Void),
+        contentPadding = SparkDimens.screen,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
