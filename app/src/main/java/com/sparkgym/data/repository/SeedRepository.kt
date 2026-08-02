@@ -86,6 +86,9 @@ class SeedRepository(private val db: SparkGymDatabase) {
 
     private suspend fun seedExercises() {
         val dao = db.exerciseDao()
+
+        // ExerciseSeed.exercises already folds in the advanced and bodyweight
+        // lists, so this is the whole library — with kit and without.
         val existing = ExerciseSeed.exercises.associateWith { dao.bySlug(it.slug) }
 
         val missing = existing.filterValues { it == null }.keys

@@ -62,7 +62,7 @@ object ExerciseSeedAdvanced {
             "The old-school ribcage builder. Keep the hips low and feel the stretch across the lats, not the shoulder joint."
         ),
         SeedExercise(
-            "svend-press", "Svend Press", Equipment.OTHER, Force.PUSH,
+            "svend-press", "Svend Press", Equipment.PLATE, Force.PUSH,
             Diff.BEGINNER, Track.WEIGHT_REPS,
             listOf(Muscle.CHEST),
             instructions = "Crush two plates together at chest height and press straight out. Pure inner-chest contraction with almost no joint stress."
@@ -242,7 +242,7 @@ object ExerciseSeedAdvanced {
             "Seven bottom-half reps, seven top-half, seven full. Log it as one set of 21 and pick a weight you will regret."
         ),
         SeedExercise(
-            "plate-pinch", "Plate Pinch Hold", Equipment.OTHER, Force.CARRY,
+            "plate-pinch", "Plate Pinch Hold", Equipment.PLATE, Force.CARRY,
             Diff.INTERMEDIATE, Track.DURATION,
             listOf(Muscle.FOREARMS),
             instructions = "Pinch two smooth plates together and hold. Grip that carries straight over to deadlifts and rows."
@@ -372,7 +372,7 @@ object ExerciseSeedAdvanced {
             "Abs are muscles: they need progressive load like anything else. Eight to twelve heavy reps beats a hundred crunches."
         ),
         SeedExercise(
-            "weighted-plank", "Weighted Plank", Equipment.OTHER, Force.STATIC,
+            "weighted-plank", "Weighted Plank", Equipment.PLATE, Force.STATIC,
             Diff.INTERMEDIATE, Track.DURATION,
             listOf(Muscle.ABS), listOf(Muscle.OBLIQUES, Muscle.GLUTES),
             "Plate on the upper back. Once you can hold a bodyweight plank for 90 seconds, add load instead of time."
@@ -461,13 +461,13 @@ object ExerciseSeedAdvanced {
         ),
         // ---------------- Neck: small, unglamorous, worth doing ----------------
         SeedExercise(
-            "neck-extension", "Neck Extension", Equipment.OTHER, Force.PULL,
+            "neck-extension", "Neck Extension", Equipment.PLATE, Force.PULL,
             Diff.INTERMEDIATE, Track.REPS_ONLY,
             listOf(Muscle.NECK), listOf(Muscle.TRAPS),
             "Face down on a bench, plate on the back of the head, chin tucking through a full range. Slow, light, and never to failure."
         ),
         SeedExercise(
-            "neck-lateral-flexion", "Lateral Neck Flexion", Equipment.OTHER, Force.PULL,
+            "neck-lateral-flexion", "Lateral Neck Flexion", Equipment.PLATE, Force.PULL,
             Diff.INTERMEDIATE, Track.REPS_ONLY,
             listOf(Muscle.NECK), listOf(Muscle.TRAPS),
             "Lie on your side, ear towards the shoulder. Train both directions or you build an asymmetry you will feel."
@@ -480,7 +480,7 @@ object ExerciseSeedAdvanced {
         ),
 
         SeedExercise(
-            "neck-harness-extension", "Neck Harness Extension", Equipment.OTHER, Force.PULL,
+            "neck-harness-extension", "Neck Harness Extension", Equipment.PLATE, Force.PULL,
             Diff.ADVANCED, Track.WEIGHT_REPS,
             listOf(Muscle.NECK), listOf(Muscle.TRAPS),
             "Harness on, plate hanging in front, hinge at the hips. Full range, three seconds down. This is the movement that actually builds neck thickness."

@@ -27,6 +27,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sparkgym.core.design.SegmentedBar
 import com.sparkgym.core.design.SparkColors
 import com.sparkgym.core.design.SparkDimens
+import com.sparkgym.core.util.S
+import com.sparkgym.data.seed.SeedStretch
 import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemChip
 import com.sparkgym.core.design.SystemLabel
@@ -251,10 +253,11 @@ private fun MuscleDetailPanel(
     val exerciseList = when (selectedTab) {
         0 -> viewModel.primaryExercisesFor(entry.muscle, allExercises)
         1 -> viewModel.secondaryExercisesFor(entry.muscle, allExercises)
-        else -> viewModel.stretchExercisesFor(entry.muscle, allExercises)
+        else -> emptyList()
     }
+    val stretches = if (selectedTab == 2) viewModel.stretchesFor(entry.muscle) else emptyList()
 
-    SystemPanel(accent = heatColor(entry.intensity), title = "${entry.muscle.displayName} (${entry.muscle.nameId})") {
+    SystemPanel(accent = heatColor(entry.intensity), title = S.muscle(entry.muscle)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             DetailStat(entry.effectiveSets.oneDecimal(), "Effective sets")
             DetailStat(entry.target.toInt().toString(), "Weekly target")
@@ -277,21 +280,45 @@ private fun MuscleDetailPanel(
 
         Spacer(Modifier.height(14.dp))
         Text(
-            "EXERCISES FOR ${entry.muscle.displayName.uppercase()}",
+            "${S.exercisesFor} ${S.muscle(entry.muscle).uppercase()}",
             style = SystemLabel.copy(color = SparkColors.Cyan)
         )
         Spacer(Modifier.height(6.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            SelectableChip("Primary", selectedTab == 0, { selectedTab = 0 }, accent = SparkColors.Cyan)
-            SelectableChip("Secondary", selectedTab == 1, { selectedTab = 1 }, accent = SparkColors.Violet)
-            SelectableChip("Stretches", selectedTab == 2, { selectedTab = 2 }, accent = SparkColors.Amber)
+            SelectableChip(S.primaryMuscles, selectedTab == 0, { selectedTab = 0 }, accent = SparkColors.Cyan)
+            SelectableChip(S.secondaryMuscles, selectedTab == 1, { selectedTab = 1 }, accent = SparkColors.Violet)
+            SelectableChip(S.stretchAfter, selectedTab == 2, { selectedTab = 2 }, accent = SparkColors.Amber)
         }
 
         Spacer(Modifier.height(10.dp))
 
-        if (exerciseList.isEmpty()) {
-            Text("No specific exercises registered for this category.", style = MaterialTheme.typography.bodySmall, color = SparkColors.TextMuted)
+        if (selectedTab == 2) {
+            if (stretches.isEmpty()) {
+                Text(
+                    S.noStretchForMuscle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SparkColors.TextMuted
+                )
+            } else {
+                Text(
+                    S.stretchWhy,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SparkColors.TextMuted
+                )
+                Spacer(Modifier.height(8.dp))
+                androidx.compose.foundation.lazy.LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(stretches.size) { i -> StretchCard(stretches[i]) }
+                }
+            }
+        } else if (exerciseList.isEmpty()) {
+            Text(
+                if (selectedTab == 0) S.noDirectWork else S.noAssistingWork,
+                style = MaterialTheme.typography.bodySmall,
+                color = SparkColors.TextMuted
+            )
         } else {
             androidx.compose.foundation.lazy.LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -362,4 +389,32 @@ private fun balanceColor(score: Int) = when {
     score >= 75 -> SparkColors.Success
     score >= 50 -> SparkColors.Amber
     else -> SparkColors.Danger
+}
+
+@Composable
+private fun StretchCard(stretch: SeedStretch) {
+    SystemPanel(
+        modifier = Modifier.width(260.dp),
+        accent = SparkColors.Amber,
+        contentPadding = PaddingValues(12.dp)
+    ) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+                S.stretchName(stretch),
+                style = MaterialTheme.typography.titleSmall,
+                color = SparkColors.TextPrimary,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                "${stretch.holdSeconds}s",
+                style = SystemLabel.copy(color = SparkColors.Amber)
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            S.stretchHowTo(stretch),
+            style = MaterialTheme.typography.bodySmall,
+            color = SparkColors.TextSecondary
+        )
+    }
 }

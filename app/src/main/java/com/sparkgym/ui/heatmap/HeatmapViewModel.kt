@@ -4,6 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sparkgym.di.AppContainer
 import com.sparkgym.domain.engine.HeatmapEngine
+import com.sparkgym.domain.engine.MusclePanel
+import com.sparkgym.data.local.ExerciseWithMuscles
+import com.sparkgym.data.seed.SeedStretch
+import com.sparkgym.data.seed.StretchSeed
 import com.sparkgym.domain.model.Muscle
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,7 +37,7 @@ class HeatmapViewModel(private val container: AppContainer) : ViewModel() {
     val volumeTrend = container.workoutRepository.observeVolumeTrend(28)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val exercises: StateFlow<List<com.sparkgym.data.local.ExerciseWithMuscles>> =
+    val exercises: StateFlow<List<ExerciseWithMuscles>> =
         container.workoutRepository.observeExercises()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -59,25 +63,29 @@ class HeatmapViewModel(private val container: AppContainer) : ViewModel() {
     fun ranked(heat: Map<Muscle, HeatmapEngine.MuscleHeat>): List<HeatmapEngine.MuscleHeat> =
         heat.values.filter { it.muscle in BodyGeometry.drawable }.sortedByDescending { it.intensity }
 
-    fun primaryExercisesFor(muscle: Muscle, all: List<com.sparkgym.data.local.ExerciseWithMuscles>): List<com.sparkgym.data.local.ExerciseWithMuscles> {
-        val direct = all.filter { item ->
-            item.muscles.any { it.muscle == muscle.name && it.contribution >= 1.0f } ||
-                com.sparkgym.domain.engine.ExerciseSearch.musclesFor(item.exercise.name).contains(muscle)
-        }
-        return direct.ifEmpty { all.take(4) }
+    /**
+     * Adapts a database row onto what [MusclePanel] needs, so the ranking rules
+     * live in the domain where they can be tested without Android.
+     */
+    private class Row(val item: ExerciseWithMuscles) : MusclePanel.Item {
+        override fun contributionTo(muscle: Muscle): Float? =
+            item.muscles.firstOrNull { it.muscle == muscle.name }?.contribution
+        override val homeFriendly: Boolean get() = item.exercise.equipment.isHomeFriendly
     }
 
-    fun secondaryExercisesFor(muscle: Muscle, all: List<com.sparkgym.data.local.ExerciseWithMuscles>): List<com.sparkgym.data.local.ExerciseWithMuscles> {
-        val synergist = all.filter { item ->
-            item.muscles.any { it.muscle == muscle.name && it.contribution < 1.0f }
-        }
-        return synergist.ifEmpty { all.drop(4).take(4) }
-    }
+    fun primaryExercisesFor(muscle: Muscle, all: List<ExerciseWithMuscles>): List<ExerciseWithMuscles> =
+        MusclePanel.primary(muscle, all.map(::Row)).map { it.item }
 
-    fun stretchExercisesFor(muscle: Muscle, all: List<com.sparkgym.data.local.ExerciseWithMuscles>): List<com.sparkgym.data.local.ExerciseWithMuscles> {
-        return all.filter { item ->
-            item.exercise.equipment == com.sparkgym.domain.model.Equipment.BAND ||
-                item.exercise.difficulty == com.sparkgym.domain.model.ExerciseDifficulty.BEGINNER
-        }.take(4)
-    }
+    fun secondaryExercisesFor(muscle: Muscle, all: List<ExerciseWithMuscles>): List<ExerciseWithMuscles> =
+        MusclePanel.secondary(muscle, all.map(::Row)).map { it.item }
+
+    /**
+     * What to stretch after training this muscle.
+     *
+     * This used to return *exercises* filtered by "uses a band, or is rated
+     * beginner", which is not a stretch by any definition. StretchSeed is keyed
+     * by muscle precisely so this question has a real answer.
+     */
+    fun stretchesFor(muscle: Muscle): List<SeedStretch> =
+        StretchSeed.forExercise(setOf(muscle))
 }

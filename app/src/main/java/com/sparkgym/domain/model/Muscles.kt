@@ -63,6 +63,13 @@ enum class Equipment(val displayName: String, val isHomeFriendly: Boolean) {
     PULLUP_BAR("Pull-up Bar", true),
     BENCH("Bench", true),
     CARDIO("Cardio Machine", false),
+    /**
+     * Loose plates used as the load: neck work, plate pinches, Svend presses.
+     * Split out of OTHER because OTHER is a grab-bag that also holds jump rope
+     * and outdoor running, and one home-friendly flag cannot be true for both a
+     * skipping rope and a loaded neck harness.
+     */
+    PLATE("Weight Plate", false),
     OTHER("Other", true)
 }
 

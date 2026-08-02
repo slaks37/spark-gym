@@ -149,6 +149,21 @@ object S {
     val removePhoto @Composable @ReadOnlyComposable get() = pick("Remove", "Hapus")
     val tapToAddPhoto @Composable @ReadOnlyComposable get() = pick("Tap to add a photo", "Ketuk untuk menambah foto")
 
+    // ── Muscle panel ─────────────────────────────────────────────────
+    val exercisesFor @Composable @ReadOnlyComposable get() = pick("EXERCISES FOR", "LATIHAN UNTUK")
+    val noDirectWork @Composable @ReadOnlyComposable get() =
+        pick(
+            "Nothing in the library trains this one directly.",
+            "Belum ada latihan di koleksi yang melatih otot ini secara langsung."
+        )
+    val noAssistingWork @Composable @ReadOnlyComposable get() =
+        pick(
+            "Nothing in the library uses this one as a helper.",
+            "Belum ada latihan yang memakai otot ini sebagai pendukung."
+        )
+    val noStretchForMuscle @Composable @ReadOnlyComposable get() =
+        pick("No stretch listed for this one yet.", "Belum ada peregangan untuk otot ini.")
+
     // ── Stretching ───────────────────────────────────────────────────
     val stretchAfter @Composable @ReadOnlyComposable get() = pick("Stretch after", "Peregangan setelah")
     val stretchWhy @Composable @ReadOnlyComposable get() =
