@@ -125,6 +125,13 @@ object S {
 
     // ── Dialogs ──────────────────────────────────────────────────────
     val acknowledge @Composable @ReadOnlyComposable get() = pick("Acknowledge", "Mengerti")
+    val achievementUnlocked @Composable @ReadOnlyComposable get() =
+        pick("Achievement unlocked", "Pencapaian terbuka")
+    val streakBonus @Composable @ReadOnlyComposable get() = pick("Streak bonus", "Bonus beruntun")
+    val total @Composable @ReadOnlyComposable get() = pick("Total", "Total")
+    val levelUp @Composable @ReadOnlyComposable get() = pick("LEVEL UP", "NAIK LEVEL")
+    val attributePoints @Composable @ReadOnlyComposable get() = pick("attribute points", "poin atribut")
+    val share @Composable @ReadOnlyComposable get() = pick("Share", "Bagikan")
 
     // ── Misc ─────────────────────────────────────────────────────────
     val all @Composable @ReadOnlyComposable get() = pick("All", "Semua")

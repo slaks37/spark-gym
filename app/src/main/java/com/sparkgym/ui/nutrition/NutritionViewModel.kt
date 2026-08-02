@@ -3,6 +3,7 @@ package com.sparkgym.ui.nutrition
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sparkgym.core.util.Dates
+import com.sparkgym.domain.model.AchievementCatalog
 import com.sparkgym.data.local.DiaryEntryEntity
 import com.sparkgym.data.local.FoodEntity
 import com.sparkgym.data.prefs.UserProfile
@@ -26,6 +27,23 @@ import kotlinx.coroutines.launch
 /** The MyFitnessPal half: diary, food search, water and the calorie budget. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class NutritionViewModel(private val container: AppContainer) : ViewModel() {
+
+    /**
+     * Badges earned by logging, announced once.
+     *
+     * Nutrition achievements can only ever be earned here — finishing a workout
+     * does not check them — so if this screen stays silent the user learns about
+     * them by chance, days later, on the achievements list.
+     */
+    private val _earned = MutableStateFlow<List<AchievementCatalog.Definition>>(emptyList())
+    val earned: StateFlow<List<AchievementCatalog.Definition>> = _earned.asStateFlow()
+
+    fun dismissEarned() { _earned.value = emptyList() }
+
+    private suspend fun announce(keys: List<String>) {
+        val defs = keys.mapNotNull(AchievementCatalog::byKey)
+        if (defs.isNotEmpty()) _earned.value = defs
+    }
 
     private val _day = MutableStateFlow(Dates.today())
     val day: StateFlow<Long> = _day.asStateFlow()
@@ -126,7 +144,7 @@ class NutritionViewModel(private val container: AppContainer) : ViewModel() {
                 food.copy(id = id)
             } else food
             container.nutritionRepository.logFood(_day.value, meal, saved, grams)
-            container.coordinator.onFoodLogged()
+            announce(container.coordinator.onFoodLogged())
         }
     }
 
@@ -135,14 +153,14 @@ class NutritionViewModel(private val container: AppContainer) : ViewModel() {
             container.nutritionRepository.quickAdd(
                 _day.value, meal, label, MacroTotals(calories, protein, carbs, fat)
             )
-            container.coordinator.onFoodLogged()
+            announce(container.coordinator.onFoodLogged())
         }
     }
 
     fun deleteEntry(id: Long) {
         viewModelScope.launch {
             container.nutritionRepository.deleteEntry(id)
-            container.coordinator.onFoodLogged()
+            announce(container.coordinator.onFoodLogged())
         }
     }
 
@@ -172,7 +190,7 @@ class NutritionViewModel(private val container: AppContainer) : ViewModel() {
             if (meal != null) {
                 container.nutritionRepository.food(id)?.let {
                     container.nutritionRepository.logFood(_day.value, meal, it, gramsToLog)
-                    container.coordinator.onFoodLogged()
+                    announce(container.coordinator.onFoodLogged())
                 }
             }
         }
@@ -247,7 +265,7 @@ class NutritionViewModel(private val container: AppContainer) : ViewModel() {
         val scaled = _selectedPlan.value ?: return
         viewModelScope.launch {
             container.nutritionRepository.applyMealPlan(_day.value, scaled)
-            container.coordinator.onFoodLogged()
+            announce(container.coordinator.onFoodLogged())
             _selectedPlan.value = null
         }
     }

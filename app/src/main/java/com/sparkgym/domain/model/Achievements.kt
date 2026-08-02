@@ -25,4 +25,9 @@ object AchievementCatalog {
         Definition("meal-planner", "Fuel Discipline", "Log food for 7 days", 120),
         Definition("nutritionist", "Macro Monarch", "Log food for 30 days", 350)
     )
+
+    private val index = all.associateBy { it.key }
+
+    /** The definition behind an awarded key, so the UI never shows a raw slug. */
+    fun byKey(key: String): Definition? = index[key]
 }

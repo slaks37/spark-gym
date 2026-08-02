@@ -42,6 +42,7 @@ import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.design.SystemPanel
 import com.sparkgym.core.util.Dates
 import com.sparkgym.core.util.S
+import com.sparkgym.ui.common.SystemMessageDialog
 import com.sparkgym.domain.model.Meal
 import kotlin.math.roundToInt
 
@@ -52,6 +53,17 @@ fun NutritionScreen(
     onOpenMealPlans: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val earned by viewModel.earned.collectAsStateWithLifecycle()
+
+    if (earned.isNotEmpty()) {
+        SystemMessageDialog(
+            title = S.achievementUnlocked,
+            lines = earned.flatMap { listOf(it.title, it.description, "+${it.xp} XP") },
+            accent = SparkColors.Amber,
+            confirmText = S.acknowledge,
+            onDismiss = viewModel::dismissEarned
+        )
+    }
     val target = state.target
 
     LazyColumn(

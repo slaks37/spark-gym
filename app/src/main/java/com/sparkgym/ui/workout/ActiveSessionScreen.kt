@@ -52,6 +52,7 @@ import com.sparkgym.core.design.SystemLabel
 import com.sparkgym.core.design.SystemPanel
 import com.sparkgym.core.util.Dates
 import com.sparkgym.core.util.S
+import com.sparkgym.domain.model.AchievementCatalog
 import com.sparkgym.core.util.compactVolume
 import com.sparkgym.data.local.SetLogEntity
 import com.sparkgym.domain.engine.StrengthMath
@@ -288,14 +289,20 @@ fun ActiveSessionScreen(
             add("${outcome.summary.completedSets} ${S.sets} · ${outcome.summary.volumeKg.roundToInt()} kg")
             addAll(outcome.xp.breakdown.map { "${it.first}: +${it.second}" })
             if (outcome.xp.multiplier > 1.0) {
-                add("Streak bonus ×${String.format(java.util.Locale.US, "%.2f", outcome.xp.multiplier)}")
+                add("${S.streakBonus} ×${String.format(java.util.Locale.US, "%.2f", outcome.xp.multiplier)}")
             }
-            add("Total +${outcome.xp.total} XP")
+            add("${S.total} +${outcome.xp.total} XP")
             outcome.levelsGained?.let { range ->
-                add("LEVEL UP → ${range.last}")
-                add("+${outcome.pointsGained} attribute points")
+                add("${S.levelUp} → ${range.last}")
+                add("+${outcome.pointsGained} ${S.attributePoints}")
             }
-            outcome.newAchievements.forEach { add("Achievement unlocked") }
+            // Name the badge. This used to add the words "Achievement unlocked"
+            // once per award and throw the key away, so clearing two at once
+            // said the same thing twice and named neither.
+            outcome.newAchievements.forEach { key ->
+                val def = AchievementCatalog.byKey(key)
+                add("${S.achievementUnlocked}: ${def?.title ?: key}" + (def?.let { " (+${it.xp} XP)" } ?: ""))
+            }
         }
         SystemMessageDialog(
             title = S.sessionComplete,
@@ -305,7 +312,7 @@ fun ActiveSessionScreen(
                 viewModel.consumeFinish()
                 onExit()
             },
-            secondaryText = "Share",
+            secondaryText = S.share,
             onSecondaryAction = {
                 viewModel.consumeFinish()
                 onShareWorkout(sessionId)
