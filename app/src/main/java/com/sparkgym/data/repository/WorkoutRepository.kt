@@ -447,5 +447,14 @@ class WorkoutRepository(private val db: SparkGymDatabase) {
     
     suspend fun saveProgressPhoto(photo: com.sparkgym.data.local.ProgressPhotoEntity): Long = photoDao.insertPhoto(photo)
     
-    suspend fun deleteProgressPhoto(id: Long) = photoDao.deletePhoto(id)
+    /**
+     * Removes the row *and* the file behind it. Each progress photo has its own
+     * JPEG now, so dropping only the row would orphan it on disk forever with
+     * nothing left pointing at it.
+     */
+    suspend fun deleteProgressPhoto(id: Long) {
+        val path = photoDao.photoById(id)?.imageUri
+        photoDao.deletePhoto(id)
+        com.sparkgym.core.util.ImageUtils.delete(path)
+    }
 }

@@ -25,9 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sparkgym.core.design.SparkColors
 import com.sparkgym.core.design.SparkDimens
-import com.sparkgym.core.design.SystemButton
 import com.sparkgym.core.design.SystemLabel
-import com.sparkgym.core.util.Dates
 import com.sparkgym.core.util.ImageUtils
 import kotlinx.coroutines.launch
 
@@ -44,7 +42,7 @@ fun ProgressPhotosScreen(
     val pickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             scope.launch {
-                val path = ImageUtils.saveAvatar(context, uri) // Reuse saveAvatar or create savePhoto
+                val path = ImageUtils.saveProgressPhoto(context, uri)
                 if (path != null) {
                     viewModel.addProgressPhoto(
                         uri = path,

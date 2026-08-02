@@ -17,6 +17,9 @@ interface ProgressPhotoDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPhoto(photo: ProgressPhotoEntity): Long
 
+    @Query("SELECT * FROM progress_photos WHERE id = :id")
+    suspend fun photoById(id: Long): ProgressPhotoEntity?
+
     @Query("DELETE FROM progress_photos WHERE id = :id")
     suspend fun deletePhoto(id: Long)
 }
