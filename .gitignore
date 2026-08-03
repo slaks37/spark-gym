@@ -16,3 +16,4 @@ local.properties
 
 # Kotlin compiler scratch output, written into the project on every build.
 .kotlin/
+*.jks
